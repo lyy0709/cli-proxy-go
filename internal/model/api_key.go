@@ -27,14 +27,13 @@ const (
 
 // APIKey API 密钥模型
 type APIKey struct {
-	ID          uint           `gorm:"primarykey" json:"id"`
-	UserID      uint           `gorm:"index;not null" json:"user_id"`             // 所属用户
-	Name        string         `gorm:"size:100;not null" json:"name"`             // 名称
-	KeyHash     string         `gorm:"size:64;uniqueIndex;not null" json:"-"`     // Key 的 SHA256 哈希
-	KeyFull     string         `gorm:"size:100" json:"key_full"`                  // 完整的 Key (管理员可见)
-	KeyPrefix   string         `gorm:"size:20" json:"key_prefix"`                 // Key 前缀用于显示 (如 sk-xxx...)
-	Status      string         `gorm:"size:20;default:active" json:"status"`      // 状态: active, disabled, expired
-	PriceRate   float64        `gorm:"type:decimal(5,2);default:1.0" json:"price_rate"` // 价格倍率，默认1.0，可覆盖用户倍率
+	ID        uint           `gorm:"primarykey" json:"id"`
+	UserID    uint           `gorm:"index;not null" json:"user_id"`         // 所属用户
+	Name      string         `gorm:"size:100;not null" json:"name"`         // 名称
+	KeyHash   string         `gorm:"size:64;uniqueIndex;not null" json:"-"` // Key 的 SHA256 哈希
+	KeyPrefix string         `gorm:"size:20" json:"key_prefix"`             // Key 前缀用于显示 (如 sk-xxx...)
+	Status    string         `gorm:"size:20;default:active" json:"status"`  // 状态: active, disabled, expired
+	PriceRate float64        `gorm:"type:decimal(5,2);default:1.0" json:"price_rate"` // 价格倍率，默认1.0，可覆盖用户倍率
 
 	// 套餐绑定
 	UserPackageID *uint        `gorm:"index" json:"user_package_id,omitempty"`    // 绑定的用户套餐ID

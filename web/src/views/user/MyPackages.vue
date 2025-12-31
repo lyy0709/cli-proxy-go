@@ -135,9 +135,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/toast'
 import api from '@/api'
-import { Refresh, Calendar, Timer, Clock, Check } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const packages = ref([])

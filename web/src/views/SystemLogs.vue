@@ -1,261 +1,280 @@
 <!--
- * 文件作用：系统日志页面，查看和管理系统日志
+ * 文件作用：系统日志页面 - Apple HIG 风格
  * 负责功能：
  *   - 应用日志和服务器日志切换
  *   - 日志文件列表和筛选
  *   - 结构化日志解析展示
  *   - 实时日志追踪
  * 重要程度：⭐⭐ 辅助（运维日志）
- * 依赖模块：element-plus, api
 -->
 <template>
   <div class="system-logs-page">
+    <!-- 页面标题 -->
     <div class="page-header">
-      <h2>系统日志</h2>
-      <div class="header-actions">
-        <el-button @click="loadFiles" :loading="loadingFiles">
-          <el-icon><Refresh /></el-icon> 刷新
-        </el-button>
+      <div class="header-content">
+        <h1 class="page-title">系统日志</h1>
+        <p class="page-subtitle">查看应用日志和服务器日志</p>
       </div>
+      <button class="btn btn-outline" @click="loadFiles" :disabled="loadingFiles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="{ spinning: loadingFiles }">
+          <polyline points="23,4 23,10 17,10"/>
+          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+        </svg>
+        刷新
+      </button>
     </div>
 
     <!-- Tab 切换 -->
-    <el-tabs v-model="logSource" @tab-change="handleSourceChange" class="log-tabs">
-      <el-tab-pane label="应用日志" name="app">
-        <template #label>
-          <span><el-icon><Files /></el-icon> 应用日志</span>
-        </template>
-      </el-tab-pane>
-      <el-tab-pane label="服务器日志" name="server">
-        <template #label>
-          <span><el-icon><Monitor /></el-icon> 服务器日志</span>
-        </template>
-      </el-tab-pane>
-    </el-tabs>
+    <div class="source-tabs">
+      <button :class="['source-tab', { active: logSource === 'app' }]" @click="logSource = 'app'; handleSourceChange()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+        </svg>
+        应用日志
+      </button>
+      <button :class="['source-tab', { active: logSource === 'server' }]" @click="logSource = 'server'; handleSourceChange()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        服务器日志
+      </button>
+    </div>
 
-    <el-row :gutter="20">
+    <!-- 主内容区 -->
+    <div class="logs-layout">
       <!-- 左侧：文件列表 -->
-      <el-col :span="8">
-        <el-card class="file-list-card">
-          <template #header>
-            <div class="card-header">
-              <span>{{ logSource === 'app' ? '应用日志文件' : '服务器日志文件' }}</span>
-              <el-tag size="small">{{ files.length }} 个文件</el-tag>
-            </div>
-          </template>
+      <div class="file-panel">
+        <div class="panel-header">
+          <span class="panel-title">{{ logSource === 'app' ? '应用日志文件' : '服务器日志文件' }}</span>
+          <span class="file-count">{{ files.length }} 个</span>
+        </div>
 
-          <!-- 分类筛选 -->
-          <div class="filter-bar">
-            <el-select v-model="filterCategory" placeholder="选择分类" clearable size="small" @change="loadFiles">
-              <el-option
-                v-for="cat in categories"
-                :key="cat.name"
-                :label="`${cat.label} (${cat.count})`"
-                :value="cat.name"
-              />
-            </el-select>
-            <el-date-picker
-              v-if="logSource === 'app'"
-              v-model="filterDate"
-              type="date"
-              placeholder="选择日期"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-              size="small"
-              clearable
-              @change="loadFiles"
-              style="width: 140px; margin-left: 10px;"
-            />
-          </div>
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+          <select v-model="filterCategory" @change="loadFiles" class="filter-select">
+            <option value="">全部分类</option>
+            <option v-for="cat in categories" :key="cat.name" :value="cat.name">{{ cat.label }} ({{ cat.count }})</option>
+          </select>
+          <input v-if="logSource === 'app'" type="date" v-model="filterDate" @change="loadFiles" class="filter-date" />
+        </div>
 
-          <!-- 文件列表 -->
-          <el-table
-            :data="files"
-            v-loading="loadingFiles"
-            stripe
-            size="small"
-            highlight-current-row
-            @row-click="selectFile"
-            :row-class-name="getRowClassName"
-            max-height="500"
+        <!-- 文件列表 -->
+        <div class="file-list" v-if="!loadingFiles">
+          <div
+            v-for="file in files"
+            :key="file.name"
+            :class="['file-item', { selected: selectedFile === file.name }]"
+            @click="selectFile(file)"
           >
-            <el-table-column prop="name" label="文件名" min-width="180" show-overflow-tooltip>
-              <template #default="{ row }">
-                <div class="file-name">
-                  <el-icon><Document /></el-icon>
-                  <span>{{ row.name }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="size_human" label="大小" width="80" />
-            <el-table-column label="操作" width="80">
-              <template #default="{ row }">
-                <el-dropdown @command="(cmd) => handleFileCommand(cmd, row)">
-                  <el-button type="primary" link size="small">
-                    <el-icon><More /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="view">查看</el-dropdown-item>
-                      <el-dropdown-item command="tail">实时</el-dropdown-item>
-                      <el-dropdown-item command="download">下载</el-dropdown-item>
-                      <el-dropdown-item v-if="logSource === 'app'" command="delete" divided>删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
+            <div class="file-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              <span class="file-name">{{ file.name }}</span>
+            </div>
+            <div class="file-meta">
+              <span class="file-size">{{ file.size_human }}</span>
+              <div class="file-actions">
+                <button class="file-action-btn" @click.stop="handleTail(file)" title="实时">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5,3 19,12 5,21"/>
+                  </svg>
+                </button>
+                <button class="file-action-btn" @click.stop="handleDownload(file)" title="下载">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </button>
+                <button v-if="logSource === 'app'" class="file-action-btn danger" @click.stop="confirmDelete(file)" title="删除">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div v-if="files.length === 0" class="empty-files">暂无日志文件</div>
+        </div>
+        <div v-else class="loading-files">
+          <div class="loading-spinner small"></div>
+          <span>加载中...</span>
+        </div>
+      </div>
 
       <!-- 右侧：日志内容 -->
-      <el-col :span="16">
-        <el-card class="log-content-card">
-          <template #header>
-            <div class="card-header">
-              <div class="file-info" v-if="selectedFile">
-                <span class="filename">{{ selectedFile }}</span>
-                <el-tag size="small" type="info" v-if="logInfo.size_human">{{ logInfo.size_human }}</el-tag>
-                <el-tag size="small" type="success" v-if="logInfo.total_lines">{{ logInfo.total_lines }} 行</el-tag>
-              </div>
-              <span v-else>请选择日志文件</span>
-              <div class="header-tools" v-if="selectedFile">
-                <el-input
-                  v-model="searchKeyword"
-                  placeholder="搜索关键词"
-                  size="small"
-                  clearable
-                  style="width: 150px; margin-right: 10px;"
-                  @keyup.enter="loadLogContent"
-                />
-                <el-checkbox v-model="reverseOrder" size="small" @change="loadLogContent">倒序</el-checkbox>
-                <el-checkbox v-model="defaultExpanded" size="small" style="margin-left: 10px;">展开详情</el-checkbox>
-                <el-button size="small" @click="loadLogContent" :loading="loadingContent" style="margin-left: 10px;">
-                  查询
-                </el-button>
-                <el-button size="small" type="success" @click="tailLog" :loading="loadingTail">
-                  <el-icon><VideoPlay /></el-icon> 实时
-                </el-button>
-              </div>
-            </div>
-          </template>
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="content-info" v-if="selectedFile">
+            <span class="selected-file">{{ selectedFile }}</span>
+            <span v-if="logInfo.size_human" class="info-badge">{{ logInfo.size_human }}</span>
+            <span v-if="logInfo.total_lines" class="info-badge success">{{ logInfo.total_lines }} 行</span>
+          </div>
+          <span v-else class="no-file">请选择日志文件</span>
 
-          <!-- 日志内容 -->
-          <div class="log-content" v-loading="loadingContent || loadingTail">
-            <div v-if="!selectedFile" class="empty-tip">
-              <el-empty description="请从左侧选择要查看的日志文件" />
+          <div class="content-tools" v-if="selectedFile">
+            <div class="search-box small">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input v-model="searchKeyword" placeholder="搜索..." @keyup.enter="loadLogContent" />
             </div>
-            <div v-else-if="logEntries.length === 0 && logLines.length === 0" class="empty-tip">
-              <el-empty description="没有日志内容" />
-            </div>
-            <!-- 结构化日志显示（应用日志） -->
-            <div v-else-if="logSource === 'app' && logEntries.length > 0" class="log-entries" ref="logPreRef">
-              <div
-                v-for="(entry, index) in logEntries"
-                :key="index"
-                :class="['log-entry', getLevelClass(entry.level), { 'expanded': isExpanded(index) }]"
-                @click="toggleExpand(index)"
-              >
-                <template v-if="entry.is_json">
-                  <!-- 主信息行 -->
-                  <div class="log-main-line">
-                    <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-                    <span :class="['log-level', getLevelClass(entry.level)]">{{ entry.level }}</span>
-                    <span class="log-module" v-if="entry.module">[{{ entry.module }}]</span>
-                    <span class="log-request-id" v-if="entry.request_id">{{ entry.request_id }}</span>
-                    <span class="log-message">{{ entry.message }}</span>
-                    <!-- 内联关键字段 -->
-                    <span class="inline-fields" v-if="hasInlineFields(entry)">
-                      <span v-if="entry.fields?.user_id" class="inline-field user-id">
-                        <span class="field-icon">👤</span>{{ entry.fields.user_id }}
-                      </span>
-                      <span v-if="entry.fields?.account_id" class="inline-field account-id">
-                        <span class="field-icon">🔑</span>{{ entry.fields.account_id }}
-                      </span>
-                      <span v-if="entry.fields?.api_key_id" class="inline-field api-key">
-                        <span class="field-icon">🎫</span>{{ entry.fields.api_key_id }}
-                      </span>
-                      <span v-if="entry.fields?.model" class="inline-field model">
-                        <span class="field-icon">🤖</span>{{ entry.fields.model }}
-                      </span>
-                      <span v-if="entry.fields?.client_ip" class="inline-field client-ip">
-                        <span class="field-icon">🌐</span>{{ entry.fields.client_ip }}
-                      </span>
-                      <span v-if="entry.fields?.status" class="inline-field" :class="getStatusClass(entry.fields.status)">
-                        {{ entry.fields.status }}
-                      </span>
-                      <span v-if="entry.fields?.latency !== undefined" class="inline-field latency">
-                        {{ formatLatency(entry.fields.latency) }}
-                      </span>
-                    </span>
-                    <span class="expand-indicator" v-if="hasFields(entry)">
-                      {{ isExpanded(index) ? '▼' : '▶' }}
-                    </span>
-                  </div>
-                  <!-- 展开的详细字段 (默认展开) -->
-                  <div v-if="isExpanded(index) && hasFields(entry)" class="log-fields">
-                    <div class="fields-grid">
-                      <template v-for="(value, key) in getSortedFields(entry.fields)" :key="key">
-                        <div class="log-field" :class="getFieldClass(key)">
-                          <span class="field-key">{{ key }}:</span>
-                          <span class="field-value" :class="getValueClass(key, value)">{{ formatFieldValue(key, value) }}</span>
-                        </div>
-                      </template>
-                      <div v-if="entry.caller" class="log-field caller-field">
-                        <span class="field-key">caller:</span>
-                        <span class="field-value caller-value">{{ entry.caller }}</span>
-                      </div>
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="reverseOrder" @change="loadLogContent" />
+              <span>倒序</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="defaultExpanded" />
+              <span>展开</span>
+            </label>
+            <button class="btn btn-sm btn-secondary" @click="loadLogContent" :disabled="loadingContent">查询</button>
+            <button class="btn btn-sm btn-success" @click="tailLog" :disabled="loadingTail">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5,3 19,12 5,21"/>
+              </svg>
+              实时
+            </button>
+          </div>
+        </div>
+
+        <!-- 日志内容区 -->
+        <div class="log-content" :class="{ loading: loadingContent || loadingTail }">
+          <div v-if="!selectedFile" class="empty-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+            </svg>
+            <span>请从左侧选择日志文件</span>
+          </div>
+
+          <div v-else-if="logEntries.length === 0 && logLines.length === 0 && !loadingContent" class="empty-content">
+            <span>没有日志内容</span>
+          </div>
+
+          <!-- 结构化日志 -->
+          <div v-else-if="logSource === 'app' && logEntries.length > 0" class="log-entries" ref="logPreRef">
+            <div
+              v-for="(entry, index) in logEntries"
+              :key="index"
+              :class="['log-entry', getLevelClass(entry.level), { expanded: isExpanded(index) }]"
+              @click="toggleExpand(index)"
+            >
+              <template v-if="entry.is_json">
+                <div class="log-main-line">
+                  <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+                  <span :class="['log-level', getLevelClass(entry.level)]">{{ entry.level }}</span>
+                  <span class="log-module" v-if="entry.module">[{{ entry.module }}]</span>
+                  <span class="log-message">{{ entry.message }}</span>
+                  <span class="inline-fields" v-if="hasInlineFields(entry)">
+                    <span v-if="entry.fields?.user_id" class="inline-field user">👤{{ entry.fields.user_id }}</span>
+                    <span v-if="entry.fields?.model" class="inline-field model">🤖{{ entry.fields.model }}</span>
+                    <span v-if="entry.fields?.status" :class="['inline-field', getStatusClass(entry.fields.status)]">{{ entry.fields.status }}</span>
+                    <span v-if="entry.fields?.latency !== undefined" class="inline-field latency">{{ formatLatency(entry.fields.latency) }}</span>
+                  </span>
+                  <span class="expand-icon" v-if="hasFields(entry)">{{ isExpanded(index) ? '▼' : '▶' }}</span>
+                </div>
+                <div v-if="isExpanded(index) && hasFields(entry)" class="log-fields">
+                  <div class="fields-grid">
+                    <div v-for="(value, key) in getSortedFields(entry.fields)" :key="key" class="log-field">
+                      <span class="field-key">{{ key }}:</span>
+                      <span class="field-value">{{ formatFieldValue(key, value) }}</span>
+                    </div>
+                    <div v-if="entry.caller" class="log-field full">
+                      <span class="field-key">caller:</span>
+                      <span class="field-value caller">{{ entry.caller }}</span>
                     </div>
                   </div>
-                </template>
-                <template v-else>
-                  <span class="log-raw">{{ entry.raw }}</span>
-                </template>
-              </div>
+                </div>
+              </template>
+              <template v-else>
+                <span class="log-raw">{{ entry.raw }}</span>
+              </template>
             </div>
-            <!-- 原始文本显示（服务器日志或fallback） -->
-            <pre v-else class="log-pre" ref="logPreRef">{{ logLines.join('\n') }}</pre>
           </div>
 
-          <!-- 分页 -->
-          <div class="pagination-wrap" v-if="logInfo.total_pages > 1">
-            <el-pagination
-              v-model:current-page="page"
-              :page-size="pageSize"
-              :total="logInfo.total_lines"
-              :page-sizes="[100, 200, 500, 1000]"
-              layout="total, sizes, prev, pager, next"
-              @current-change="loadLogContent"
-              @size-change="handlePageSizeChange"
-            />
+          <!-- 原始文本 -->
+          <pre v-else-if="logLines.length > 0" class="log-pre" ref="logPreRef">{{ logLines.join('\n') }}</pre>
+
+          <div v-if="loadingContent || loadingTail" class="loading-overlay">
+            <div class="loading-spinner"></div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+
+        <!-- 分页 -->
+        <div v-if="logInfo.total_pages > 1" class="content-footer">
+          <div class="pagination-info">共 {{ logInfo.total_lines }} 行</div>
+          <div class="pagination-controls">
+            <select v-model="pageSize" @change="handlePageSizeChange" class="page-size-select">
+              <option :value="100">100 行</option>
+              <option :value="200">200 行</option>
+              <option :value="500">500 行</option>
+            </select>
+            <div class="page-btns">
+              <button class="page-btn" :disabled="page <= 1" @click="page--; loadLogContent()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+              </button>
+              <span class="page-current">{{ page }} / {{ logInfo.total_pages }}</span>
+              <button class="page-btn" :disabled="page >= logInfo.total_pages" @click="page++; loadLogContent()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <Teleport to="body">
+      <div v-if="deleteVisible" class="modal-overlay" @click.self="deleteVisible = false">
+        <div class="modal modal-sm">
+          <div class="modal-header danger">
+            <div class="danger-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <h2>确认删除</h2>
+          </div>
+          <div class="modal-body">
+            <p class="delete-message">确定要删除日志文件 "{{ deleteTarget }}" 吗？</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="deleteVisible = false">取消</button>
+            <button class="btn btn-danger" :disabled="deleting" @click="handleDelete">
+              <span v-if="deleting" class="btn-loading"></span>
+              {{ deleting ? '删除中...' : '删除' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Document, More, VideoPlay, Files, Monitor } from '@element-plus/icons-vue'
+import { ref, nextTick, onMounted } from 'vue'
+import { ElMessage } from '@/utils/toast'
 import api from '@/api'
 
-// 日志来源
-const logSource = ref('app') // app=应用日志, server=服务器日志
-
-// 文件列表
+const logSource = ref('app')
 const files = ref([])
 const categories = ref([])
 const loadingFiles = ref(false)
 const filterCategory = ref('')
 const filterDate = ref('')
 
-// 日志内容
 const selectedFile = ref('')
 const logLines = ref([])
-const logEntries = ref([]) // 解析后的日志条目
+const logEntries = ref([])
 const logInfo = ref({})
 const loadingContent = ref(false)
 const loadingTail = ref(false)
@@ -264,12 +283,14 @@ const pageSize = ref(200)
 const searchKeyword = ref('')
 const reverseOrder = ref(false)
 const logPreRef = ref(null)
-const expandedRows = ref([]) // 展开的行
-const defaultExpanded = ref(true) // 默认展开
+const expandedRows = ref([])
+const defaultExpanded = ref(true)
 
-// 切换日志来源
+const deleteVisible = ref(false)
+const deleteTarget = ref('')
+const deleting = ref(false)
+
 function handleSourceChange() {
-  // 重置状态
   files.value = []
   categories.value = []
   selectedFile.value = ''
@@ -282,18 +303,15 @@ function handleSourceChange() {
   searchKeyword.value = ''
   reverseOrder.value = false
   expandedRows.value = []
-
   loadFiles()
 }
 
-// 加载文件列表
 async function loadFiles() {
   loadingFiles.value = true
   try {
     const params = { source: logSource.value }
     if (filterCategory.value) params.category = filterCategory.value
     if (filterDate.value && logSource.value === 'app') params.date = filterDate.value
-
     const res = await api.getSystemLogFiles(params)
     files.value = res.data?.files || []
     categories.value = res.data?.categories || []
@@ -304,24 +322,16 @@ async function loadFiles() {
   }
 }
 
-// 选择文件
-function selectFile(row) {
-  selectedFile.value = row.name
+function selectFile(file) {
+  selectedFile.value = file.name
   page.value = 1
   searchKeyword.value = ''
   expandedRows.value = []
   loadLogContent()
 }
 
-// 获取行样式
-function getRowClassName({ row }) {
-  return row.name === selectedFile.value ? 'selected-row' : ''
-}
-
-// 加载日志内容
 async function loadLogContent() {
   if (!selectedFile.value) return
-
   loadingContent.value = true
   expandedRows.value = []
   try {
@@ -340,116 +350,72 @@ async function loadLogContent() {
       total_lines: res.data?.total_lines,
       total_pages: res.data?.total_pages
     }
-
-    // 滚动到顶部
-    nextTick(() => {
-      if (logPreRef.value) {
-        logPreRef.value.scrollTop = 0
-      }
-    })
+    nextTick(() => { if (logPreRef.value) logPreRef.value.scrollTop = 0 })
   } catch (e) {
-    console.error('Failed to load log content:', e)
-    ElMessage.error('加载日志失败: ' + (e.message || '未知错误'))
+    ElMessage.error('加载日志失败')
   } finally {
     loadingContent.value = false
   }
 }
 
-// 查看实时日志
 async function tailLog() {
   if (!selectedFile.value) return
-
   loadingTail.value = true
   expandedRows.value = []
   try {
-    const res = await api.tailSystemLog({
-      file: selectedFile.value,
-      source: logSource.value,
-      lines: 200
-    })
+    const res = await api.tailSystemLog({ file: selectedFile.value, source: logSource.value, lines: 200 })
     logLines.value = res.data?.lines || []
     logEntries.value = res.data?.entries || []
-    logInfo.value = {
-      size_human: res.data?.size_human,
-      total_lines: res.data?.count,
-      total_pages: 1
-    }
+    logInfo.value = { size_human: res.data?.size_human, total_lines: res.data?.count, total_pages: 1 }
     page.value = 1
-
-    // 滚动到底部
-    nextTick(() => {
-      if (logPreRef.value) {
-        logPreRef.value.scrollTop = logPreRef.value.scrollHeight
-      }
-    })
-
-    ElMessage.success('已加载最新 ' + (res.data?.count || 0) + ' 行日志')
+    nextTick(() => { if (logPreRef.value) logPreRef.value.scrollTop = logPreRef.value.scrollHeight })
+    ElMessage.success('已加载最新 ' + (res.data?.count || 0) + ' 行')
   } catch (e) {
-    console.error('Failed to tail log:', e)
-    ElMessage.error('加载实时日志失败: ' + (e.message || '未知错误'))
+    ElMessage.error('加载实时日志失败')
   } finally {
     loadingTail.value = false
   }
 }
 
-// 处理页大小变化
-function handlePageSizeChange(size) {
-  pageSize.value = size
+function handlePageSizeChange() {
   page.value = 1
   loadLogContent()
 }
 
-// 处理文件操作命令
-function handleFileCommand(cmd, row) {
-  switch (cmd) {
-    case 'view':
-      selectFile(row)
-      break
-    case 'tail':
-      selectedFile.value = row.name
-      tailLog()
-      break
-    case 'download':
-      window.open(api.downloadSystemLog(row.name, logSource.value), '_blank')
-      break
-    case 'delete':
-      if (logSource.value === 'app') {
-        confirmDelete(row.name)
-      } else {
-        ElMessage.warning('服务器日志不允许删除')
-      }
-      break
-  }
+function handleTail(file) {
+  selectedFile.value = file.name
+  tailLog()
 }
 
-// 确认删除
-async function confirmDelete(filename) {
+function handleDownload(file) {
+  window.open(api.downloadSystemLog(file.name, logSource.value), '_blank')
+}
+
+function confirmDelete(file) {
+  deleteTarget.value = file.name
+  deleteVisible.value = true
+}
+
+async function handleDelete() {
+  deleting.value = true
   try {
-    await ElMessageBox.confirm(
-      `确定要删除日志文件 "${filename}" 吗？此操作不可恢复。`,
-      '删除确认',
-      { type: 'warning' }
-    )
-
-    await api.deleteSystemLog(filename, logSource.value)
+    await api.deleteSystemLog(deleteTarget.value, logSource.value)
     ElMessage.success('删除成功')
-
-    if (selectedFile.value === filename) {
+    if (selectedFile.value === deleteTarget.value) {
       selectedFile.value = ''
       logLines.value = []
       logEntries.value = []
       logInfo.value = {}
     }
-
+    deleteVisible.value = false
     loadFiles()
   } catch (e) {
-    if (e !== 'cancel') {
-      console.error('Failed to delete file:', e)
-    }
+    ElMessage.error('删除失败')
+  } finally {
+    deleting.value = false
   }
 }
 
-// 获取日志级别样式类
 function getLevelClass(level) {
   if (!level) return ''
   const l = level.toUpperCase()
@@ -459,532 +425,258 @@ function getLevelClass(level) {
   return 'level-info'
 }
 
-// 格式化时间
 function formatTime(timestamp) {
   if (!timestamp) return ''
-  // ISO8601 格式: 2025-12-23T10:30:45.123+08:00
   try {
-    const date = new Date(timestamp)
-    return date.toLocaleString('zh-CN', {
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  } catch {
-    return timestamp
-  }
+    return new Date(timestamp).toLocaleString('zh-CN', { hour12: false })
+  } catch { return timestamp }
 }
 
-// 格式化值
-function formatValue(value) {
-  if (typeof value === 'object') {
-    return JSON.stringify(value)
-  }
-  return String(value)
-}
-
-// 检查是否有额外字段
 function hasFields(entry) {
   return (entry.fields && Object.keys(entry.fields).length > 0) || entry.caller
 }
 
-// 检查是否有内联字段
 function hasInlineFields(entry) {
   if (!entry.fields) return false
-  const inlineKeys = ['user_id', 'account_id', 'api_key_id', 'model', 'client_ip', 'status', 'latency']
-  return inlineKeys.some(key => entry.fields[key] !== undefined)
+  return ['user_id', 'model', 'status', 'latency'].some(k => entry.fields[k] !== undefined)
 }
 
-// 判断是否展开
 function isExpanded(index) {
-  // 如果默认展开，则未在 expandedRows 中的都是展开的
-  // 如果默认收起，则在 expandedRows 中的才是展开的
-  if (defaultExpanded.value) {
-    return !expandedRows.value.includes(index)
-  }
-  return expandedRows.value.includes(index)
+  return defaultExpanded.value ? !expandedRows.value.includes(index) : expandedRows.value.includes(index)
 }
 
-// 切换展开
 function toggleExpand(index) {
   const idx = expandedRows.value.indexOf(index)
-  if (idx > -1) {
-    expandedRows.value.splice(idx, 1)
-  } else {
-    expandedRows.value.push(index)
-  }
+  if (idx > -1) expandedRows.value.splice(idx, 1)
+  else expandedRows.value.push(index)
 }
 
-// 获取状态码样式类
 function getStatusClass(status) {
   if (status >= 500) return 'status-error'
   if (status >= 400) return 'status-warn'
   if (status >= 200 && status < 300) return 'status-success'
-  return 'status-info'
+  return ''
 }
 
-// 格式化延迟
 function formatLatency(latency) {
-  if (latency === undefined || latency === null) return ''
-  if (latency >= 1000) {
-    return (latency / 1000).toFixed(2) + 's'
-  }
-  return latency + 'ms'
+  if (latency === undefined) return ''
+  return latency >= 1000 ? (latency / 1000).toFixed(2) + 's' : latency + 'ms'
 }
 
-// 字段排序（重要字段在前）
 function getSortedFields(fields) {
   if (!fields) return {}
-  const priority = [
-    'user_id', 'api_key_id', 'account_id', 'account_name', 'model',
-    'client_ip', 'method', 'path', 'status', 'latency',
-    'input_tokens', 'output_tokens', 'cache_creation_tokens', 'cache_read_tokens', 'total_tokens',
-    'input_cost', 'output_cost', 'cache_create_cost', 'cache_read_cost', 'total_cost',
-    'price_rate', 'package_id', 'package_type',
-    'request_size', 'response_size', 'host', 'protocol', 'user_agent', 'content_type',
-    'attempts', 'max_retries', 'exec_duration', 'total_duration',
-    'session_id', 'error'
-  ]
-
+  const priority = ['user_id', 'api_key_id', 'account_id', 'model', 'client_ip', 'method', 'path', 'status', 'latency', 'input_tokens', 'output_tokens', 'total_tokens', 'total_cost', 'error']
   const sorted = {}
-  // 先按优先级添加
-  for (const key of priority) {
-    if (fields[key] !== undefined) {
-      sorted[key] = fields[key]
-    }
-  }
-  // 再添加其他字段
-  for (const key of Object.keys(fields)) {
-    if (sorted[key] === undefined) {
-      sorted[key] = fields[key]
-    }
-  }
+  for (const k of priority) if (fields[k] !== undefined) sorted[k] = fields[k]
+  for (const k of Object.keys(fields)) if (sorted[k] === undefined) sorted[k] = fields[k]
   return sorted
 }
 
-// 获取字段样式类
-function getFieldClass(key) {
-  if (['user_id', 'api_key_id', 'account_id'].includes(key)) return 'field-id'
-  if (['input_tokens', 'output_tokens', 'total_tokens', 'cache_creation_tokens', 'cache_read_tokens'].includes(key)) return 'field-token'
-  if (['input_cost', 'output_cost', 'total_cost', 'cache_create_cost', 'cache_read_cost'].includes(key)) return 'field-cost'
-  if (['latency', 'exec_duration', 'total_duration'].includes(key)) return 'field-duration'
-  if (key === 'error') return 'field-error'
-  if (key === 'client_ip') return 'field-ip'
-  if (key === 'model') return 'field-model'
-  return ''
-}
-
-// 获取值样式类
-function getValueClass(key, value) {
-  if (key === 'status') {
-    if (value >= 500) return 'value-error'
-    if (value >= 400) return 'value-warn'
-    if (value >= 200 && value < 300) return 'value-success'
-  }
-  if (key === 'error') return 'value-error'
-  return ''
-}
-
-// 格式化字段值
 function formatFieldValue(key, value) {
   if (value === null || value === undefined) return '-'
-
-  // 费用格式化
-  if (['input_cost', 'output_cost', 'total_cost', 'cache_create_cost', 'cache_read_cost'].includes(key)) {
-    return '$' + Number(value).toFixed(6)
-  }
-
-  // 时长格式化
-  if (['latency', 'exec_duration', 'total_duration'].includes(key)) {
-    if (typeof value === 'string' && value.includes('ms')) return value
-    if (typeof value === 'string' && value.includes('s')) return value
-    if (typeof value === 'number') {
-      if (value >= 1000) return (value / 1000).toFixed(2) + 's'
-      return value + 'ms'
-    }
-    return value
-  }
-
-  // Token 格式化
-  if (['input_tokens', 'output_tokens', 'total_tokens', 'cache_creation_tokens', 'cache_read_tokens'].includes(key)) {
-    return Number(value).toLocaleString()
-  }
-
-  // 对象格式化
-  if (typeof value === 'object') {
-    return JSON.stringify(value, null, 2)
-  }
-
+  if (['input_cost', 'output_cost', 'total_cost'].includes(key)) return '$' + Number(value).toFixed(6)
+  if (['latency', 'exec_duration'].includes(key)) return typeof value === 'number' ? (value >= 1000 ? (value / 1000).toFixed(2) + 's' : value + 'ms') : value
+  if (['input_tokens', 'output_tokens', 'total_tokens'].includes(key)) return Number(value).toLocaleString()
+  if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }
 
-onMounted(() => {
-  loadFiles()
-})
+onMounted(() => { loadFiles() })
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+.system-logs-page { max-width: 1600px; margin: 0 auto; }
+
+/* 页面标题 */
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--apple-spacing-lg); }
+.header-content { flex: 1; }
+.page-title { font-size: var(--apple-text-3xl); font-weight: var(--apple-font-bold); color: var(--apple-text-primary); margin: 0 0 var(--apple-spacing-xs) 0; }
+.page-subtitle { font-size: var(--apple-text-base); color: var(--apple-text-secondary); margin: 0; }
+
+/* Tab 切换 */
+.source-tabs { display: flex; gap: var(--apple-spacing-xs); margin-bottom: var(--apple-spacing-lg); }
+.source-tab {
+  display: flex; align-items: center; gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-lg);
+  font-size: var(--apple-text-sm); font-weight: var(--apple-font-medium);
+  color: var(--apple-text-secondary); background: var(--apple-fill-quaternary);
+  border-radius: var(--apple-radius-sm); transition: all var(--apple-duration-fast);
+}
+.source-tab svg { width: 16px; height: 16px; }
+.source-tab:hover { background: var(--apple-fill-tertiary); color: var(--apple-text-primary); }
+.source-tab.active { background: var(--apple-blue); color: white; }
+
+/* 主布局 */
+.logs-layout { display: grid; grid-template-columns: 320px 1fr; gap: var(--apple-spacing-lg); height: calc(100vh - 240px); }
+
+/* 文件面板 */
+.file-panel {
+  background: var(--apple-bg-primary); border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card); display: flex; flex-direction: column; overflow: hidden;
+}
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  border-bottom: 1px solid var(--apple-separator);
+}
+.panel-title { font-weight: var(--apple-font-semibold); color: var(--apple-text-primary); }
+.file-count { font-size: var(--apple-text-xs); color: var(--apple-text-tertiary); background: var(--apple-fill-tertiary); padding: 2px 8px; border-radius: var(--apple-radius-full); }
+
+.filter-bar { display: flex; gap: var(--apple-spacing-xs); padding: var(--apple-spacing-sm) var(--apple-spacing-md); border-bottom: 1px solid var(--apple-separator); }
+.filter-select, .filter-date {
+  flex: 1; padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-xs); border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm); background: var(--apple-bg-primary);
 }
 
-.page-header h2 {
-  color: #333;
-  margin: 0;
+.file-list { flex: 1; overflow-y: auto; padding: var(--apple-spacing-xs); }
+.file-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--apple-spacing-sm); border-radius: var(--apple-radius-sm);
+  cursor: pointer; transition: background var(--apple-duration-fast);
 }
-
-.log-tabs {
-  margin-bottom: 15px;
+.file-item:hover { background: var(--apple-bg-secondary); }
+.file-item.selected { background: var(--apple-blue-light); }
+.file-info { display: flex; align-items: center; gap: var(--apple-spacing-xs); flex: 1; min-width: 0; }
+.file-info svg { width: 16px; height: 16px; color: var(--apple-text-tertiary); flex-shrink: 0; }
+.file-name { font-size: var(--apple-text-sm); color: var(--apple-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { display: flex; align-items: center; gap: var(--apple-spacing-xs); }
+.file-size { font-size: var(--apple-text-xs); color: var(--apple-text-tertiary); }
+.file-actions { display: flex; gap: 2px; opacity: 0; transition: opacity var(--apple-duration-fast); }
+.file-item:hover .file-actions { opacity: 1; }
+.file-action-btn {
+  width: 24px; height: 24px; border-radius: var(--apple-radius-xs);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--apple-text-tertiary); transition: all var(--apple-duration-fast);
 }
+.file-action-btn svg { width: 12px; height: 12px; }
+.file-action-btn:hover { background: var(--apple-blue); color: white; }
+.file-action-btn.danger:hover { background: var(--apple-red); }
 
-.log-tabs :deep(.el-tabs__item) {
-  font-size: 14px;
+.empty-files, .loading-files { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--apple-spacing-xl); color: var(--apple-text-tertiary); font-size: var(--apple-text-sm); }
+
+/* 内容面板 */
+.content-panel {
+  background: var(--apple-bg-primary); border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card); display: flex; flex-direction: column; overflow: hidden;
 }
+.content-info { display: flex; align-items: center; gap: var(--apple-spacing-sm); }
+.selected-file { font-weight: var(--apple-font-semibold); color: var(--apple-blue); }
+.info-badge { font-size: var(--apple-text-xs); padding: 2px 8px; background: var(--apple-fill-tertiary); border-radius: var(--apple-radius-full); color: var(--apple-text-secondary); }
+.info-badge.success { background: var(--apple-green-light); color: var(--apple-green); }
+.no-file { color: var(--apple-text-tertiary); }
+.content-tools { display: flex; align-items: center; gap: var(--apple-spacing-sm); }
+.search-box.small { width: 120px; }
+.search-box.small input { padding: var(--apple-spacing-xxs) var(--apple-spacing-sm); padding-left: 28px; font-size: var(--apple-text-xs); }
+.search-box.small svg { width: 12px; height: 12px; left: var(--apple-spacing-xs); }
+.checkbox-label { display: flex; align-items: center; gap: 4px; font-size: var(--apple-text-xs); color: var(--apple-text-secondary); cursor: pointer; }
+.checkbox-label input { width: 14px; height: 14px; }
 
-.log-tabs :deep(.el-tabs__item .el-icon) {
-  margin-right: 5px;
-}
+/* 日志内容 */
+.log-content { flex: 1; overflow: hidden; position: relative; min-height: 300px; }
+.log-content.loading { pointer-events: none; }
+.empty-content { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--apple-text-tertiary); gap: var(--apple-spacing-md); }
+.empty-content svg { width: 48px; height: 48px; opacity: 0.5; }
+.loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filter-bar {
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-}
-
-.file-list-card {
-  height: calc(100vh - 200px);
-}
-
-.file-name {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.file-name .el-icon {
-  color: #909399;
-}
-
-.log-content-card {
-  height: calc(100vh - 200px);
-  display: flex;
-  flex-direction: column;
-}
-
-.file-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filename {
-  font-weight: bold;
-  color: #409eff;
-}
-
-.header-tools {
-  display: flex;
-  align-items: center;
-}
-
-.log-content {
-  flex: 1;
-  overflow: auto;
-  min-height: 400px;
-  max-height: calc(100vh - 390px);
-}
-
-/* 结构化日志样式 */
+/* 结构化日志 - 暗色终端风格 */
 .log-entries {
-  background: #1e1e1e;
-  border-radius: 4px;
-  padding: 10px;
-  min-height: 400px;
-  max-height: calc(100vh - 390px);
-  overflow: auto;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
+  background: #1e1e1e; height: 100%; overflow: auto; padding: var(--apple-spacing-sm);
+  font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px;
 }
+.log-entry { padding: 4px 8px; border-radius: 3px; margin-bottom: 2px; cursor: pointer; line-height: 1.6; }
+.log-entry:hover { background: rgba(255,255,255,0.08); }
+.log-entry.expanded { background: rgba(255,255,255,0.03); }
+.log-entry.level-error { background: rgba(244,135,113,0.1); border-left: 3px solid #f48771; }
+.log-entry.level-warn { background: rgba(204,167,0,0.1); border-left: 3px solid #cca700; }
+.log-main-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.log-time { color: #6a9955; margin-right: 8px; }
+.log-level { font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 11px; }
+.log-level.level-error { background: #5a1d1d; color: #f48771; }
+.log-level.level-warn { background: #5a4a1d; color: #cca700; }
+.log-level.level-info { background: #1d3a5a; color: #4fc1ff; }
+.log-level.level-debug { background: #2d2d2d; color: #888; }
+.log-module { color: #c586c0; margin-right: 8px; }
+.log-message { color: #d4d4d4; }
+.log-raw { color: #d4d4d4; white-space: pre-wrap; word-break: break-all; }
+.inline-fields { display: inline-flex; gap: 6px; margin-left: 10px; }
+.inline-field { padding: 1px 6px; border-radius: 3px; font-size: 11px; background: rgba(255,255,255,0.1); }
+.inline-field.user { background: rgba(79,193,255,0.2); color: #4fc1ff; }
+.inline-field.model { background: rgba(220,220,170,0.2); color: #dcdcaa; }
+.inline-field.latency { background: rgba(206,145,120,0.2); color: #ce9178; }
+.inline-field.status-success { background: rgba(106,153,85,0.3); color: #6a9955; }
+.inline-field.status-warn { background: rgba(204,167,0,0.3); color: #cca700; }
+.inline-field.status-error { background: rgba(244,135,113,0.3); color: #f48771; }
+.expand-icon { margin-left: auto; color: #666; font-size: 10px; }
+.log-fields { margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.4); border-radius: 4px; border-left: 3px solid #4fc1ff; }
+.fields-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 20px; }
+.log-field { display: flex; align-items: flex-start; padding: 2px 0; }
+.log-field.full { grid-column: 1 / -1; }
+.field-key { color: #9cdcfe; margin-right: 8px; min-width: 100px; }
+.field-value { color: #ce9178; word-break: break-all; }
+.field-value.caller { color: #888; font-size: 11px; }
 
-.log-entry {
-  padding: 4px 8px;
-  border-radius: 3px;
-  margin-bottom: 2px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  line-height: 1.6;
-}
-
-.log-entry:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.log-entry.expanded {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.log-main-line {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.log-time {
-  color: #6a9955;
-  margin-right: 8px;
-}
-
-.log-level {
-  font-weight: bold;
-  padding: 1px 4px;
-  border-radius: 2px;
-  margin-right: 8px;
-  font-size: 11px;
-}
-
-.level-error .log-level,
-.log-level.level-error {
-  background: #5a1d1d;
-  color: #f48771;
-}
-
-.level-warn .log-level,
-.log-level.level-warn {
-  background: #5a4a1d;
-  color: #cca700;
-}
-
-.level-info .log-level,
-.log-level.level-info {
-  background: #1d3a5a;
-  color: #4fc1ff;
-}
-
-.level-debug .log-level,
-.log-level.level-debug {
-  background: #2d2d2d;
-  color: #888;
-}
-
-.log-module {
-  color: #c586c0;
-  margin-right: 8px;
-}
-
-.log-request-id {
-  color: #ce9178;
-  margin-right: 8px;
-  font-size: 11px;
-  opacity: 0.8;
-}
-
-.log-message {
-  color: #d4d4d4;
-}
-
-.log-raw {
-  color: #d4d4d4;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-/* 内联字段样式 */
-.inline-fields {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 10px;
-}
-
-.inline-field {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.inline-field .field-icon {
-  margin-right: 3px;
-  font-size: 10px;
-}
-
-.inline-field.user-id {
-  background: rgba(79, 193, 255, 0.2);
-  color: #4fc1ff;
-}
-
-.inline-field.account-id {
-  background: rgba(197, 134, 192, 0.2);
-  color: #c586c0;
-}
-
-.inline-field.api-key {
-  background: rgba(78, 201, 176, 0.2);
-  color: #4ec9b0;
-}
-
-.inline-field.model {
-  background: rgba(220, 220, 170, 0.2);
-  color: #dcdcaa;
-}
-
-.inline-field.client-ip {
-  background: rgba(156, 220, 254, 0.2);
-  color: #9cdcfe;
-}
-
-.inline-field.latency {
-  background: rgba(206, 145, 120, 0.2);
-  color: #ce9178;
-}
-
-.inline-field.status-success {
-  background: rgba(106, 153, 85, 0.3);
-  color: #6a9955;
-}
-
-.inline-field.status-warn {
-  background: rgba(204, 167, 0, 0.3);
-  color: #cca700;
-}
-
-.inline-field.status-error {
-  background: rgba(244, 135, 113, 0.3);
-  color: #f48771;
-}
-
-.expand-indicator {
-  margin-left: auto;
-  color: #666;
-  font-size: 10px;
-  padding: 2px 5px;
-}
-
-.log-fields {
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 4px;
-  border-left: 3px solid #4fc1ff;
-}
-
-.fields-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 4px 20px;
-}
-
-.log-field {
-  display: flex;
-  align-items: flex-start;
-  padding: 2px 0;
-}
-
-.field-key {
-  color: #9cdcfe;
-  margin-right: 8px;
-  min-width: 120px;
-  font-weight: 500;
-}
-
-.field-value {
-  color: #ce9178;
-  word-break: break-all;
-}
-
-/* 字段类型样式 */
-.field-id .field-key { color: #4fc1ff; }
-.field-token .field-key { color: #b5cea8; }
-.field-token .field-value { color: #b5cea8; font-weight: bold; }
-.field-cost .field-key { color: #dcdcaa; }
-.field-cost .field-value { color: #dcdcaa; font-weight: bold; }
-.field-duration .field-key { color: #ce9178; }
-.field-duration .field-value { color: #ce9178; }
-.field-error .field-key { color: #f48771; }
-.field-error .field-value { color: #f48771; }
-.field-ip .field-key { color: #9cdcfe; }
-.field-model .field-key { color: #c586c0; }
-.field-model .field-value { color: #c586c0; }
-
-.caller-field {
-  grid-column: 1 / -1;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 6px;
-  margin-top: 4px;
-}
-
-.caller-value {
-  color: #888 !important;
-  font-size: 11px;
-}
-
-/* 值样式 */
-.value-success { color: #6a9955 !important; }
-.value-warn { color: #cca700 !important; }
-.value-error { color: #f48771 !important; }
-
-/* 按日志级别设置整行背景 */
-.log-entry.level-error {
-  background: rgba(244, 135, 113, 0.1);
-  border-left: 3px solid #f48771;
-}
-
-.log-entry.level-warn {
-  background: rgba(204, 167, 0, 0.1);
-  border-left: 3px solid #cca700;
-}
-
-/* 原始文本样式 */
+/* 原始日志 */
 .log-pre {
-  margin: 0;
-  padding: 15px;
-  background: #1e1e1e;
-  color: #d4d4d4;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow: auto;
-  min-height: 400px;
-  max-height: calc(100vh - 390px);
-  border-radius: 4px;
+  margin: 0; padding: 15px; background: #1e1e1e; color: #d4d4d4; height: 100%; overflow: auto;
+  font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
 }
 
-.empty-tip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-}
+/* 分页 */
+.content-footer { padding: var(--apple-spacing-sm) var(--apple-spacing-lg); border-top: 1px solid var(--apple-separator); display: flex; justify-content: space-between; align-items: center; }
+.pagination-info { font-size: var(--apple-text-sm); color: var(--apple-text-secondary); }
+.pagination-controls { display: flex; align-items: center; gap: var(--apple-spacing-sm); }
+.page-size-select { padding: var(--apple-spacing-xxs) var(--apple-spacing-xs); font-size: var(--apple-text-xs); border: 1px solid var(--apple-separator-opaque); border-radius: var(--apple-radius-sm); }
+.page-btns { display: flex; align-items: center; gap: var(--apple-spacing-xs); }
+.page-btn { width: 24px; height: 24px; border-radius: var(--apple-radius-sm); display: flex; align-items: center; justify-content: center; background: var(--apple-fill-quaternary); color: var(--apple-text-secondary); }
+.page-btn svg { width: 12px; height: 12px; }
+.page-btn:hover:not(:disabled) { background: var(--apple-blue); color: white; }
+.page-btn:disabled { opacity: 0.3; }
+.page-current { font-size: var(--apple-text-xs); color: var(--apple-text-primary); min-width: 50px; text-align: center; }
 
-.pagination-wrap {
-  margin-top: 15px;
-  display: flex;
-  justify-content: flex-end;
-}
+/* 按钮 */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--apple-spacing-xs); padding: var(--apple-spacing-sm) var(--apple-spacing-lg); font-size: var(--apple-text-sm); font-weight: var(--apple-font-medium); border-radius: var(--apple-radius-sm); transition: all var(--apple-duration-fast); cursor: pointer; }
+.btn svg { width: 14px; height: 14px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: var(--apple-spacing-xxs) var(--apple-spacing-sm); font-size: var(--apple-text-xs); }
+.btn-secondary { background: var(--apple-fill-tertiary); color: var(--apple-text-primary); }
+.btn-secondary:hover:not(:disabled) { background: var(--apple-fill-secondary); }
+.btn-success { background: var(--apple-green); color: white; }
+.btn-success:hover:not(:disabled) { background: #2db553; }
+.btn-danger { background: var(--apple-red); color: white; }
+.btn-danger:hover:not(:disabled) { background: #e6362d; }
+.btn-outline { background: transparent; color: var(--apple-blue); border: 1px solid var(--apple-blue); }
+.btn-outline:hover:not(:disabled) { background: var(--apple-blue-light); }
+.btn-loading { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
 
-:deep(.selected-row) {
-  background-color: #ecf5ff !important;
-}
+.loading-spinner { width: 24px; height: 24px; border: 2px solid var(--apple-fill-tertiary); border-top-color: var(--apple-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+.loading-spinner.small { width: 16px; height: 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; }
 
-:deep(.el-card__body) {
-  padding: 15px;
+/* 搜索框 */
+.search-box { display: flex; align-items: center; position: relative; }
+.search-box svg { position: absolute; left: var(--apple-spacing-sm); width: 14px; height: 14px; color: var(--apple-text-tertiary); pointer-events: none; }
+.search-box input { width: 100%; padding: var(--apple-spacing-xs) var(--apple-spacing-sm); padding-left: 32px; font-size: var(--apple-text-sm); border: 1px solid var(--apple-separator-opaque); border-radius: var(--apple-radius-sm); background: var(--apple-bg-primary); }
+.search-box input:focus { outline: none; border-color: var(--apple-blue); }
+
+/* 模态框 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: var(--apple-z-modal); }
+.modal { background: var(--apple-bg-primary); border-radius: var(--apple-radius-xl); box-shadow: var(--apple-shadow-modal); width: 100%; max-width: 400px; }
+.modal.modal-sm { max-width: 360px; }
+.modal-header { padding: var(--apple-spacing-xl); border-bottom: 1px solid var(--apple-separator); display: flex; align-items: center; justify-content: space-between; }
+.modal-header.danger { flex-direction: column; text-align: center; gap: var(--apple-spacing-md); }
+.danger-icon { width: 56px; height: 56px; background: var(--apple-red-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.danger-icon svg { width: 28px; height: 28px; color: var(--apple-red); }
+.modal-header h2 { font-size: var(--apple-text-lg); font-weight: var(--apple-font-semibold); color: var(--apple-text-primary); margin: 0; }
+.modal-body { padding: var(--apple-spacing-xl); }
+.modal-footer { padding: var(--apple-spacing-lg) var(--apple-spacing-xl); border-top: 1px solid var(--apple-separator); display: flex; justify-content: flex-end; gap: var(--apple-spacing-sm); }
+.delete-message { font-size: var(--apple-text-base); color: var(--apple-text-secondary); text-align: center; margin: 0; }
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .logs-layout { grid-template-columns: 1fr; height: auto; }
+  .file-panel { max-height: 300px; }
+  .content-panel { min-height: 500px; }
 }
 </style>

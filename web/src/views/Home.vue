@@ -1,424 +1,598 @@
 <!--
- * 文件作用：系统首页，极简版
+ * 文件作用：系统首页 - Apple HIG 风格
  * 负责功能：
- *   - API接口配置说明
+ *   - API 接口配置说明
  *   - 登录后台入口
- *   - 联系方式
  * 重要程度：⭐⭐⭐⭐⭐ 核心
- * 依赖组件：Element Plus, Vue Router
 -->
 <template>
-  <div class="home-container">
-    <!-- 头部 -->
-    <header class="home-header">
-      <div class="logo">
-        <i class="fa-solid fa-atom"></i>
-        <span>Cli-Proxy</span>
+  <div class="home-page">
+    <!-- 导航栏 -->
+    <header class="navbar">
+      <div class="navbar-content">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span class="logo-text">Cli-Proxy</span>
+        </div>
+        <router-link to="/login" class="login-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+            <polyline points="10,17 15,12 10,7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          <span>登录</span>
+        </router-link>
       </div>
-      <router-link to="/login" class="btn-login">
-        <i class="fa-solid fa-right-to-bracket"></i>
-        登录后台
-      </router-link>
     </header>
 
     <!-- 主内容 -->
     <main class="main-content">
-      <div class="content-box">
-        <h1>API 接口配置</h1>
-        <p class="subtitle">多平台 AI API 统一接入，支持 Claude、OpenAI、Gemini</p>
+      <!-- Hero 区域 -->
+      <section class="hero">
+        <h1 class="hero-title">统一的 AI API 接入</h1>
+        <p class="hero-subtitle">支持 Claude、OpenAI、Gemini 多平台，一个端点搞定所有</p>
+      </section>
 
-        <!-- API 端点 -->
-        <section class="api-section">
-          <h2>服务端点</h2>
-
+      <!-- API 端点卡片 -->
+      <section class="endpoints-section">
+        <h2 class="section-title">服务端点</h2>
+        <div class="endpoints-grid">
+          <!-- Claude -->
           <div class="endpoint-card">
             <div class="endpoint-header">
+              <div class="platform-badge claude">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 12h8M12 8v8"/>
+                </svg>
+              </div>
               <span class="platform-name">Claude</span>
-              <button class="copy-btn" @click="copyText(baseUrl + '/claude')">
-                <i class="fa-solid fa-copy"></i> 复制
+            </div>
+            <div class="endpoint-url">
+              <code>{{ baseUrl }}/claude</code>
+              <button class="copy-btn" @click="copyText(baseUrl + '/claude')" :class="{ copied: copiedUrl === baseUrl + '/claude' }">
+                <svg v-if="copiedUrl !== baseUrl + '/claude'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
               </button>
             </div>
-            <code class="endpoint-url">{{ baseUrl }}/claude</code>
           </div>
 
+          <!-- OpenAI -->
           <div class="endpoint-card">
             <div class="endpoint-header">
+              <div class="platform-badge openai">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v12M6 12h12"/>
+                </svg>
+              </div>
               <span class="platform-name">OpenAI</span>
-              <button class="copy-btn" @click="copyText(baseUrl + '/openai')">
-                <i class="fa-solid fa-copy"></i> 复制
+            </div>
+            <div class="endpoint-url">
+              <code>{{ baseUrl }}/openai</code>
+              <button class="copy-btn" @click="copyText(baseUrl + '/openai')" :class="{ copied: copiedUrl === baseUrl + '/openai' }">
+                <svg v-if="copiedUrl !== baseUrl + '/openai'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
               </button>
             </div>
-            <code class="endpoint-url">{{ baseUrl }}/openai</code>
           </div>
 
+          <!-- Gemini -->
           <div class="endpoint-card">
             <div class="endpoint-header">
+              <div class="platform-badge gemini">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                </svg>
+              </div>
               <span class="platform-name">Gemini</span>
-              <button class="copy-btn" @click="copyText(baseUrl + '/gemini')">
-                <i class="fa-solid fa-copy"></i> 复制
+            </div>
+            <div class="endpoint-url">
+              <code>{{ baseUrl }}/gemini</code>
+              <button class="copy-btn" @click="copyText(baseUrl + '/gemini')" :class="{ copied: copiedUrl === baseUrl + '/gemini' }">
+                <svg v-if="copiedUrl !== baseUrl + '/gemini'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
               </button>
             </div>
-            <code class="endpoint-url">{{ baseUrl }}/gemini</code>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- 配置示例 -->
-        <section class="config-section">
-          <h2>配置示例</h2>
-          <div class="code-block">
-            <pre><code># Claude 配置
-export ANTHROPIC_BASE_URL="{{ baseUrl }}/claude"
-export ANTHROPIC_API_KEY="你的API_Key"
-
-# OpenAI 配置
-export OPENAI_API_BASE="{{ baseUrl }}/openai/v1"
-export OPENAI_API_KEY="你的API_Key"</code></pre>
+      <!-- 配置示例 -->
+      <section class="config-section">
+        <h2 class="section-title">快速配置</h2>
+        <div class="config-card">
+          <div class="config-tabs">
+            <button
+              v-for="tab in configTabs"
+              :key="tab.id"
+              :class="['config-tab', { active: activeTab === tab.id }]"
+              @click="activeTab = tab.id"
+            >
+              {{ tab.name }}
+            </button>
           </div>
-        </section>
+          <div class="config-content">
+            <pre><code>{{ configCode }}</code></pre>
+            <button class="copy-config-btn" @click="copyText(configCode)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              复制代码
+            </button>
+          </div>
+        </div>
+      </section>
 
-        <!-- 登录提示 -->
-        <section class="login-section">
-          <p>需要 API Key？</p>
-          <router-link to="/login" class="btn-primary">
-            <i class="fa-solid fa-key"></i>
-            登录后台创建 API Key
+      <!-- CTA -->
+      <section class="cta-section">
+        <div class="cta-card">
+          <div class="cta-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+            </svg>
+          </div>
+          <h3>需要 API Key？</h3>
+          <p>登录后台创建你的专属 API Key，开始使用 AI 服务</p>
+          <router-link to="/login" class="cta-btn">
+            立即开始
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12,5 19,12 12,19"/>
+            </svg>
           </router-link>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
-
-    <!-- 页脚 -->
-    <footer class="home-footer">
-      <div class="contact-section">
-        <h3>联系我们</h3>
-        <p class="wechat">
-          <i class="fa-brands fa-weixin"></i>
-          作者微信：suiyue_creation
-        </p>
-        <a href="https://qm.qq.com/q/iJ4bHLlMEa" target="_blank" class="qq-link">
-          <i class="fa-brands fa-qq"></i>
-          点击加入 QQ 交流群【go-proxy-pro】
-        </a>
-        <p class="footer-note">
-          <a href="https://github.com/suiyuebaobao/go-proxy-pro" target="_blank">
-            <i class="fa-brands fa-github"></i> GitHub
-          </a>
-        </p>
-      </div>
-      <p class="copyright">&copy; 2025 Cli-Proxy. All rights reserved.</p>
-    </footer>
   </div>
 </template>
 
 <script setup>
-import { ensureFontAwesomeLoaded } from '@/utils/fontawesome'
-ensureFontAwesomeLoaded()
-
 import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/toast'
 
-// 获取当前 Base URL
 const baseUrl = ref(window.location.origin)
+const copiedUrl = ref('')
+const activeTab = ref('claude')
 
-// 复制文本
-const copyText = (text) => {
-  navigator.clipboard.writeText(text).then(() => {
+const configTabs = [
+  { id: 'claude', name: 'Claude' },
+  { id: 'openai', name: 'OpenAI' },
+  { id: 'bash', name: 'Bash' }
+]
+
+const configCode = computed(() => {
+  const configs = {
+    claude: `# Claude 配置
+export ANTHROPIC_BASE_URL="${baseUrl.value}/claude"
+export ANTHROPIC_API_KEY="your-api-key"`,
+    openai: `# OpenAI 配置
+export OPENAI_API_BASE="${baseUrl.value}/openai/v1"
+export OPENAI_API_KEY="your-api-key"`,
+    bash: `# 测试连接
+curl ${baseUrl.value}/claude/v1/messages \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: your-api-key" \\
+  -d '{"model":"claude-3-5-sonnet-20241022","max_tokens":100,"messages":[{"role":"user","content":"Hello"}]}'`
+  }
+  return configs[activeTab.value]
+})
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedUrl.value = text
     ElMessage.success('已复制到剪贴板')
-  }).catch(() => {
+    setTimeout(() => {
+      copiedUrl.value = ''
+    }, 2000)
+  } catch {
     ElMessage.error('复制失败')
-  })
+  }
 }
 </script>
 
 <style scoped>
-.home-container {
+.home-page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #0f172a;
-  color: #e5e7eb;
+  background: var(--apple-bg-secondary);
 }
 
-/* 头部 */
-.home-header {
+/* 导航栏 */
+.navbar {
+  position: sticky;
+  top: 0;
+  background: var(--apple-bg-blur);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--apple-separator);
+  z-index: 100;
+}
+
+.navbar-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--apple-spacing-xl);
+  height: 56px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
+  gap: var(--apple-spacing-sm);
 }
 
-.logo i {
-  color: #a855f7;
-  font-size: 1.75rem;
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--apple-blue);
 }
 
-.btn-login {
-  display: inline-flex;
+.logo-text {
+  font-size: var(--apple-text-lg);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+}
+
+.login-btn {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-xs) var(--apple-spacing-md);
+  background: var(--apple-blue);
   color: white;
+  border-radius: var(--apple-radius-full);
   text-decoration: none;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
 }
 
-.btn-login:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+.login-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.login-btn:hover {
+  background: var(--apple-blue-hover);
+  transform: scale(1.02);
 }
 
 /* 主内容 */
 .main-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--apple-spacing-xxl) var(--apple-spacing-xl);
 }
 
-.content-box {
-  max-width: 800px;
-  width: 100%;
+/* Hero */
+.hero {
+  text-align: center;
+  padding: var(--apple-spacing-xxxl) 0;
 }
 
-.content-box > h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.hero-title {
+  font-size: var(--apple-text-5xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+  letter-spacing: var(--apple-tracking-tight);
+  margin-bottom: var(--apple-spacing-md);
 }
 
-.subtitle {
-  color: #9ca3af;
-  font-size: 1.125rem;
-  margin-bottom: 3rem;
+.hero-subtitle {
+  font-size: var(--apple-text-xl);
+  color: var(--apple-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-/* API 端点 */
-.api-section {
-  margin-bottom: 3rem;
+/* 端点区域 */
+.endpoints-section {
+  margin-bottom: var(--apple-spacing-xxxl);
 }
 
-.api-section h2 {
-  font-size: 1.25rem;
-  margin-bottom: 1.5rem;
-  color: white;
+.section-title {
+  font-size: var(--apple-text-2xl);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+  margin-bottom: var(--apple-spacing-xl);
+}
+
+.endpoints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--apple-spacing-lg);
 }
 
 .endpoint-card {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-xl);
+  padding: var(--apple-spacing-xl);
+  box-shadow: var(--apple-shadow-card);
+  transition: all var(--apple-duration-normal) var(--apple-ease-default);
+}
+
+.endpoint-card:hover {
+  box-shadow: var(--apple-shadow-card-hover);
+  transform: translateY(-2px);
 }
 
 .endpoint-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  gap: var(--apple-spacing-md);
+  margin-bottom: var(--apple-spacing-lg);
 }
 
-.platform-name {
-  font-weight: 600;
-  color: #e5e7eb;
-}
-
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a855f7;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.copy-btn:hover {
-  background: rgba(99, 102, 241, 0.3);
-  border-color: rgba(99, 102, 241, 0.5);
-}
-
-.endpoint-url {
-  display: block;
-  background: rgba(15, 23, 42, 0.5);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  color: #a855f7;
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 0.938rem;
-  overflow-x: auto;
-}
-
-/* 配置示例 */
-.config-section {
-  margin-bottom: 3rem;
-}
-
-.config-section h2 {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: white;
-}
-
-.code-block {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
-  padding: 1.25rem;
-  overflow-x: auto;
-}
-
-.code-block pre {
-  margin: 0;
-}
-
-.code-block code {
-  color: #e5e7eb;
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 0.875rem;
-  line-height: 1.7;
-}
-
-/* 登录提示 */
-.login-section {
-  text-align: center;
-  padding: 2rem;
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 12px;
-}
-
-.login-section > p {
-  color: #9ca3af;
-  margin-bottom: 1rem;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
-}
-
-/* 页脚 */
-.home-footer {
-  border-top: 1px solid rgba(99, 102, 241, 0.2);
-  padding: 3rem 2rem 2rem;
-  text-align: center;
-}
-
-.contact-section h3 {
-  color: white;
-  margin-bottom: 1rem;
-}
-
-.wechat {
-  color: #9ca3af;
-  font-size: 1rem;
-  margin-bottom: 0.75rem;
+.platform-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--apple-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
 }
 
-.wechat i {
-  color: #07c160;
-  font-size: 1.25rem;
+.platform-badge svg {
+  width: 24px;
+  height: 24px;
+  color: white;
 }
 
-.qq-link {
+.platform-badge.claude {
+  background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+}
+
+.platform-badge.openai {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.platform-badge.gemini {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+}
+
+.platform-name {
+  font-size: var(--apple-text-lg);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+}
+
+.endpoint-url {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-sm);
+  background: var(--apple-bg-tertiary);
+  border-radius: var(--apple-radius-md);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+}
+
+.endpoint-url code {
+  flex: 1;
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--apple-radius-sm);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  flex-shrink: 0;
+}
+
+.copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.copy-btn:hover {
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-primary);
+}
+
+.copy-btn.copied {
+  color: var(--apple-green);
+}
+
+/* 配置区域 */
+.config-section {
+  margin-bottom: var(--apple-spacing-xxxl);
+}
+
+.config-card {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-xl);
+  overflow: hidden;
+  box-shadow: var(--apple-shadow-card);
+}
+
+.config-tabs {
+  display: flex;
+  padding: var(--apple-spacing-xs);
+  background: var(--apple-bg-tertiary);
+  gap: var(--apple-spacing-xxs);
+}
+
+.config-tab {
+  flex: 1;
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-secondary);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.config-tab:hover {
+  color: var(--apple-text-primary);
+}
+
+.config-tab.active {
+  background: var(--apple-bg-primary);
+  color: var(--apple-text-primary);
+  box-shadow: var(--apple-shadow-sm);
+}
+
+.config-content {
+  position: relative;
+  padding: var(--apple-spacing-xl);
+}
+
+.config-content pre {
+  margin: 0;
+  background: var(--apple-bg-tertiary);
+  border-radius: var(--apple-radius-md);
+  padding: var(--apple-spacing-lg);
+  overflow-x: auto;
+}
+
+.config-content code {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  line-height: 1.6;
+}
+
+.copy-config-btn {
+  position: absolute;
+  top: var(--apple-spacing-xl);
+  right: var(--apple-spacing-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-sm);
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-secondary);
+  box-shadow: var(--apple-shadow-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.copy-config-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.copy-config-btn:hover {
+  color: var(--apple-text-primary);
+  box-shadow: var(--apple-shadow-md);
+}
+
+/* CTA 区域 */
+.cta-section {
+  display: flex;
+  justify-content: center;
+}
+
+.cta-card {
+  text-align: center;
+  padding: var(--apple-spacing-xxxl);
+  background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
+  border-radius: var(--apple-radius-xxl);
+  max-width: 500px;
+  width: 100%;
+}
+
+.cta-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--apple-spacing-lg);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--apple-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta-icon svg {
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.cta-card h3 {
+  font-size: var(--apple-text-2xl);
+  font-weight: var(--apple-font-semibold);
+  color: white;
+  margin-bottom: var(--apple-spacing-sm);
+}
+
+.cta-card p {
+  font-size: var(--apple-text-base);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--apple-spacing-xl);
+}
+
+.cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-  color: white;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-md) var(--apple-spacing-xl);
+  background: white;
+  color: var(--apple-blue);
+  border-radius: var(--apple-radius-full);
   text-decoration: none;
-  border-radius: 8px;
-  font-weight: 500;
-  margin-bottom: 1rem;
-  transition: all 0.2s;
+  font-size: var(--apple-text-base);
+  font-weight: var(--apple-font-semibold);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
 }
 
-.qq-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+.cta-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
-.footer-note {
-  margin: 1rem 0;
-}
-
-.footer-note a {
-  color: #6b7280;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.footer-note a:hover {
-  color: #a855f7;
-}
-
-.copyright {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-top: 1rem;
+.cta-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--apple-shadow-lg);
 }
 
 /* 响应式 */
 @media (max-width: 768px) {
-  .home-header {
-    padding: 1rem;
+  .hero-title {
+    font-size: var(--apple-text-3xl);
   }
 
-  .logo {
-    font-size: 1.25rem;
+  .hero-subtitle {
+    font-size: var(--apple-text-md);
   }
 
-  .btn-login {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+  .endpoints-grid {
+    grid-template-columns: 1fr;
   }
 
-  .content-box > h1 {
-    font-size: 1.75rem;
-  }
-
-  .main-content {
-    padding: 2rem 1rem;
+  .cta-card {
+    padding: var(--apple-spacing-xl);
   }
 }
 </style>

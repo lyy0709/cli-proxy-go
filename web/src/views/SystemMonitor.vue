@@ -7,7 +7,7 @@
  *   - 系统资源监控（CPU、内存、磁盘）
  *   - 缓存和MySQL状态
  * 重要程度：⭐⭐⭐⭐ 重要（运维监控）
- * 依赖模块：element-plus, api
+ * 依赖模块：api, toast
 -->
 <template>
   <div class="system-monitor">
@@ -329,8 +329,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api'
-import { ElMessage } from 'element-plus'
-import { Refresh, Money, Coin, Connection, User, Files } from '@element-plus/icons-vue'
+import { ElMessage } from '@/utils/toast'
 
 const loading = ref(false)
 const data = ref({})

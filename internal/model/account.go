@@ -61,24 +61,24 @@ type Account struct {
 	Priority  int            `gorm:"default:50" json:"priority"`              // 优先级 1-100
 	Weight    int            `gorm:"default:100" json:"weight"`               // 权重
 
-	// 通用认证字段
-	APIKey      string `gorm:"size:500" json:"api_key,omitempty"`       // API Key
-	APISecret   string `gorm:"size:500" json:"api_secret,omitempty"`    // API Secret
-	AccessToken string `gorm:"size:2000" json:"access_token,omitempty"` // Access Token
-	RefreshToken string `gorm:"size:2000" json:"refresh_token,omitempty"` // Refresh Token
-	TokenExpiry *time.Time `json:"token_expiry,omitempty"`               // Token 过期时间
+	// 通用认证字段 (敏感信息，不序列化到 JSON)
+	APIKey       string     `gorm:"size:500" json:"-"`      // API Key
+	APISecret    string     `gorm:"size:500" json:"-"`      // API Secret
+	AccessToken  string     `gorm:"size:2000" json:"-"`     // Access Token
+	RefreshToken string     `gorm:"size:2000" json:"-"`     // Refresh Token
+	TokenExpiry  *time.Time `json:"token_expiry,omitempty"` // Token 过期时间
 
 	// Claude Official 专用
-	SessionKey        string `gorm:"type:text" json:"session_key,omitempty"`        // Session Key
-	OrganizationID    string `gorm:"size:100" json:"organization_id,omitempty"`    // 组织 ID
+	SessionKey        string `gorm:"type:text" json:"-"`                        // Session Key (敏感)
+	OrganizationID    string `gorm:"size:100" json:"organization_id,omitempty"` // 组织 ID
 	SubscriptionLevel string `gorm:"size:20" json:"subscription_level,omitempty"`  // 订阅级别: free/pro/team
 	OpusAccess        bool   `gorm:"default:false" json:"opus_access"`             // 是否有 Opus 权限
 
-	// AWS Bedrock 专用
-	AWSAccessKey    string `gorm:"size:100" json:"aws_access_key,omitempty"`
-	AWSSecretKey    string `gorm:"size:200" json:"aws_secret_key,omitempty"`
+	// AWS Bedrock 专用 (敏感信息，不序列化)
+	AWSAccessKey    string `gorm:"size:100" json:"-"`
+	AWSSecretKey    string `gorm:"size:200" json:"-"`
 	AWSRegion       string `gorm:"size:30" json:"aws_region,omitempty"`
-	AWSSessionToken string `gorm:"size:2000" json:"aws_session_token,omitempty"`
+	AWSSessionToken string `gorm:"size:2000" json:"-"`
 
 	// Azure OpenAI 专用
 	AzureEndpoint      string `gorm:"size:200" json:"azure_endpoint,omitempty"`

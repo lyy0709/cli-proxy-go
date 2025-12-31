@@ -1,285 +1,393 @@
 <!--
- * 文件作用：缓存管理页面，管理会话和并发缓存
+ * 文件作用：缓存管理页面 - Apple HIG 风格
  * 负责功能：
  *   - 缓存配置管理（TTL设置）
  *   - 会话列表（每个会话一行，显示到TTL结束）
  *   - 会话绑定详情查看
  *   - 不可用账号管理
+ *   - 并发统计
  * 重要程度：⭐⭐⭐ 一般（缓存管理）
- * 依赖模块：element-plus, api
 -->
 <template>
   <div class="cache-page">
+    <!-- 页面标题 -->
     <div class="page-header">
-      <h2>缓存管理</h2>
-      <el-button @click="refreshAll">
-        <el-icon><Refresh /></el-icon> 刷新
-      </el-button>
+      <div class="header-content">
+        <h1 class="page-title">缓存管理</h1>
+        <p class="page-subtitle">管理会话缓存、不可用账号和并发控制</p>
+      </div>
+      <button class="btn btn-outline" @click="refreshAll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23,4 23,10 17,10"/>
+          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+        </svg>
+        刷新
+      </button>
     </div>
 
-    <!-- 缓存配置 -->
-    <el-card class="config-card">
-      <template #header>
-        <span>缓存配置</span>
-      </template>
-      <el-form :inline="true" :model="configForm" v-loading="loadingConfig">
-        <el-form-item label="粘性会话TTL">
-          <el-input-number v-model="configForm.session_ttl" :min="1" :max="1440" />
-          <span class="unit">分钟</span>
-        </el-form-item>
-        <el-form-item label="会话续期阈值">
-          <el-input-number v-model="configForm.session_renewal_ttl" :min="1" :max="60" />
-          <span class="unit">分钟</span>
-        </el-form-item>
-        <el-form-item label="不可用标记TTL">
-          <el-input-number v-model="configForm.unavailable_ttl" :min="1" :max="60" />
-          <span class="unit">分钟</span>
-        </el-form-item>
-        <el-form-item label="并发计数TTL">
-          <el-input-number v-model="configForm.concurrency_ttl" :min="1" :max="60" />
-          <span class="unit">分钟</span>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="saveConfig">保存配置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 两个Tab：会话列表 / 不可用账号 -->
-    <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-      <!-- 会话列表 -->
-      <el-tab-pane label="会话列表" name="sessions">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>活跃会话 ({{ sessionTotal }})</span>
-              <div class="header-actions">
-                <el-input
-                  v-model="sessionSearch"
-                  placeholder="搜索会话/账号/用户"
-                  clearable
-                  style="width: 200px"
-                  @input="filterSessions"
-                >
-                  <template #prefix><el-icon><Search /></el-icon></template>
-                </el-input>
-                <el-popconfirm title="清除所有会话缓存?" @confirm="clearAllSessions">
-                  <template #reference>
-                    <el-button type="danger" size="small">清除全部</el-button>
-                  </template>
-                </el-popconfirm>
-              </div>
+    <!-- 缓存配置卡片 -->
+    <div class="config-card">
+      <div class="card-header">
+        <h3>缓存配置</h3>
+      </div>
+      <div class="config-form" :class="{ loading: loadingConfig }">
+        <div class="config-row">
+          <div class="config-item">
+            <label>粘性会话 TTL</label>
+            <div class="input-group">
+              <input v-model.number="configForm.session_ttl" type="number" min="1" max="1440" class="form-input" />
+              <span class="input-suffix">分钟</span>
             </div>
-          </template>
+          </div>
+          <div class="config-item">
+            <label>会话续期阈值</label>
+            <div class="input-group">
+              <input v-model.number="configForm.session_renewal_ttl" type="number" min="1" max="60" class="form-input" />
+              <span class="input-suffix">分钟</span>
+            </div>
+          </div>
+          <div class="config-item">
+            <label>不可用标记 TTL</label>
+            <div class="input-group">
+              <input v-model.number="configForm.unavailable_ttl" type="number" min="1" max="60" class="form-input" />
+              <span class="input-suffix">分钟</span>
+            </div>
+          </div>
+          <div class="config-item">
+            <label>并发计数 TTL</label>
+            <div class="input-group">
+              <input v-model.number="configForm.concurrency_ttl" type="number" min="1" max="60" class="form-input" />
+              <span class="input-suffix">分钟</span>
+            </div>
+          </div>
+          <div class="config-item action">
+            <button class="btn btn-primary" @click="saveConfig" :disabled="savingConfig">
+              {{ savingConfig ? '保存中...' : '保存配置' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <el-table :data="filteredSessions" v-loading="loadingSessions" size="small" stripe>
-            <el-table-column label="会话ID" min-width="200" show-overflow-tooltip>
-              <template #default="{ row }">
-                <span class="session-id">{{ parseSessionId(row.session_id) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="账号" width="150">
-              <template #default="{ row }">
-                <el-tag size="small" type="warning">
-                  {{ getAccountName(row.account_id) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="用户" width="120">
-              <template #default="{ row }">
-                <span v-if="row.user_id">{{ getUserName(row.user_id) }}</span>
-                <span v-else class="no-data">-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="API Key" width="100">
-              <template #default="{ row }">
-                <el-tooltip
-                  v-if="row.api_key_id"
-                  :content="getAPIKeyTooltip(row.api_key_id)"
-                  placement="top"
-                  :show-after="200"
-                >
-                  <code class="api-key-prefix">{{ getAPIKeyLabel(row.api_key_id) }}</code>
-                </el-tooltip>
-                <span v-else class="no-data">-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="平台" width="100">
-              <template #default="{ row }">
-                <el-tag size="small" type="info">{{ row.platform || '-' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="模型" width="150" show-overflow-tooltip>
-              <template #default="{ row }">
-                {{ row.model || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="绑定时间" width="140">
-              <template #default="{ row }">
-                {{ formatTime(row.bound_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="最后使用" width="140">
-              <template #default="{ row }">
-                {{ formatTime(row.last_used_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="剩余时间" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag :type="getTTLType(row.remaining_ttl)" size="small">
-                  {{ formatTTL(row.remaining_ttl) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="客户端IP" width="130" show-overflow-tooltip>
-              <template #default="{ row }">
-                {{ row.client_ip || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="80" align="center" fixed="right">
-              <template #default="{ row }">
-                <el-popconfirm title="移除此会话?" @confirm="removeSession(row.session_id)">
-                  <template #reference>
-                    <el-button link type="danger" size="small">移除</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
-            </el-table-column>
-          </el-table>
+    <!-- Tab 切换 -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button
+          :class="['tab', { active: activeTab === 'sessions' }]"
+          @click="handleTabChange('sessions')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+            <path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+          会话列表 ({{ sessionTotal }})
+        </button>
+        <button
+          :class="['tab', { active: activeTab === 'unavailable' }]"
+          @click="handleTabChange('unavailable')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+          不可用账号 ({{ unavailableList.length }})
+        </button>
+        <button
+          :class="['tab', { active: activeTab === 'concurrency' }]"
+          @click="handleTabChange('concurrency')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18 9l-5 5-4-4-3 3"/>
+          </svg>
+          并发统计
+        </button>
+      </div>
+    </div>
 
-          <div class="pagination-wrap" v-if="sessionTotal > 0">
-            <el-pagination
-              v-model:current-page="sessionPage"
-              v-model:page-size="sessionPageSize"
-              :total="sessionTotal"
-              :page-sizes="[20, 50, 100]"
-              layout="total, sizes, prev, pager, next"
-              @change="loadSessions"
+    <!-- 会话列表 -->
+    <div v-show="activeTab === 'sessions'" class="tab-content">
+      <div class="table-card">
+        <div class="card-toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              v-model="sessionSearch"
+              type="text"
+              placeholder="搜索会话/账号/用户..."
+              @input="filterSessions"
             />
           </div>
+          <button class="btn btn-danger btn-sm" @click="confirmClearAll" :disabled="sessions.length === 0">
+            清除全部
+          </button>
+        </div>
 
-          <el-empty v-if="!loadingSessions && sessions.length === 0" description="暂无活跃会话" />
-        </el-card>
-      </el-tab-pane>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>会话ID</th>
+                <th>账号</th>
+                <th>用户</th>
+                <th>API Key</th>
+                <th>平台</th>
+                <th>模型</th>
+                <th>绑定时间</th>
+                <th>最后使用</th>
+                <th>剩余时间</th>
+                <th>客户端IP</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody v-if="!loadingSessions">
+              <tr v-for="session in filteredSessions" :key="session.session_id">
+                <td><code class="session-id">{{ parseSessionId(session.session_id) }}</code></td>
+                <td>
+                  <span class="badge badge-warning">{{ getAccountName(session.account_id) }}</span>
+                </td>
+                <td>{{ session.user_id ? getUserName(session.user_id) : '-' }}</td>
+                <td>
+                  <code v-if="session.api_key_id" class="api-key-code">{{ getAPIKeyLabel(session.api_key_id) }}</code>
+                  <span v-else class="text-muted">-</span>
+                </td>
+                <td><span class="badge badge-info">{{ session.platform || '-' }}</span></td>
+                <td class="model-cell">{{ session.model || '-' }}</td>
+                <td>{{ formatTime(session.bound_at) }}</td>
+                <td>{{ formatTime(session.last_used_at) }}</td>
+                <td>
+                  <span :class="['ttl-badge', getTTLClass(session.remaining_ttl)]">
+                    {{ formatTTL(session.remaining_ttl) }}
+                  </span>
+                </td>
+                <td>{{ session.client_ip || '-' }}</td>
+                <td>
+                  <button class="action-btn danger" @click="removeSession(session.session_id)" title="移除">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-      <!-- 不可用账号 -->
-      <el-tab-pane label="不可用账号" name="unavailable">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>临时不可用账号 ({{ unavailableList.length }})</span>
-              <el-button type="primary" size="small" @click="loadUnavailable">
-                <el-icon><Refresh /></el-icon> 刷新
-              </el-button>
+          <div v-if="loadingSessions" class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <div v-if="!loadingSessions && sessions.length === 0" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            <span>暂无活跃会话</span>
+          </div>
+        </div>
+
+        <div class="pagination-wrap" v-if="sessionTotal > 0">
+          <div class="pagination-info">共 {{ sessionTotal }} 条记录</div>
+          <div class="pagination-controls">
+            <select v-model="sessionPageSize" @change="loadSessions" class="page-size-select">
+              <option :value="20">20 条/页</option>
+              <option :value="50">50 条/页</option>
+              <option :value="100">100 条/页</option>
+            </select>
+            <div class="page-btns">
+              <button class="page-btn" :disabled="sessionPage <= 1" @click="sessionPage--; loadSessions()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15,18 9,12 15,6"/>
+                </svg>
+              </button>
+              <span class="page-current">{{ sessionPage }} / {{ Math.ceil(sessionTotal / sessionPageSize) || 1 }}</span>
+              <button class="page-btn" :disabled="sessionPage >= Math.ceil(sessionTotal / sessionPageSize)" @click="sessionPage++; loadSessions()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </button>
             </div>
-          </template>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <el-table :data="unavailableList" v-loading="loadingUnavailable" size="small">
-            <el-table-column label="账号" min-width="150">
-              <template #default="{ row }">
-                {{ getAccountName(row.account_id) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="reason" label="原因" min-width="200" show-overflow-tooltip />
-            <el-table-column label="剩余时间" width="120" align="center">
-              <template #default="{ row }">
-                <el-tag type="danger" size="small">
-                  {{ formatTTL(row.remaining_ttl) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100" align="center">
-              <template #default="{ row }">
-                <el-popconfirm title="清除不可用标记?" @confirm="clearUnavailable(row.account_id)">
-                  <template #reference>
-                    <el-button link type="primary" size="small">恢复</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
-            </el-table-column>
-          </el-table>
+    <!-- 不可用账号 -->
+    <div v-show="activeTab === 'unavailable'" class="tab-content">
+      <div class="table-card">
+        <div class="card-toolbar">
+          <span class="toolbar-title">临时不可用账号</span>
+          <button class="btn btn-outline btn-sm" @click="loadUnavailable">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23,4 23,10 17,10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+            </svg>
+            刷新
+          </button>
+        </div>
 
-          <el-empty v-if="!loadingUnavailable && unavailableList.length === 0" description="暂无不可用账号" />
-        </el-card>
-      </el-tab-pane>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>账号</th>
+                <th>原因</th>
+                <th>剩余时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody v-if="!loadingUnavailable">
+              <tr v-for="item in unavailableList" :key="item.account_id">
+                <td>
+                  <span class="badge badge-warning">{{ getAccountName(item.account_id) }}</span>
+                </td>
+                <td class="reason-cell">{{ item.reason }}</td>
+                <td>
+                  <span class="ttl-badge danger">{{ formatTTL(item.remaining_ttl) }}</span>
+                </td>
+                <td>
+                  <button class="btn btn-success btn-sm" @click="clearUnavailable(item.account_id)">
+                    恢复
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-      <!-- 并发统计 -->
-      <el-tab-pane label="并发统计" name="concurrency">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <span>账号并发 ({{ accountConcurrencyList.length }})</span>
-                </div>
-              </template>
-              <el-table :data="accountConcurrencyList" size="small" max-height="400">
-                <el-table-column label="账号" min-width="120">
-                  <template #default="{ row }">
-                    {{ getAccountName(row.account_id) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="并发" width="120" align="center">
-                  <template #default="{ row }">
-                    <span :class="getConcurrencyClass(row.concurrency, row.max_concurrency)">
-                      {{ row.concurrency }}
-                    </span> / {{ row.max_concurrency }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="80" align="center">
-                  <template #default="{ row }">
-                    <el-button link type="danger" size="small" @click="resetAccountConcurrency(row.account_id)">
+          <div v-if="loadingUnavailable" class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <div v-if="!loadingUnavailable && unavailableList.length === 0" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+              <polyline points="22,4 12,14.01 9,11.01"/>
+            </svg>
+            <span>暂无不可用账号</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 并发统计 -->
+    <div v-show="activeTab === 'concurrency'" class="tab-content">
+      <div class="concurrency-grid">
+        <!-- 账号并发 -->
+        <div class="table-card">
+          <div class="card-toolbar">
+            <span class="toolbar-title">账号并发 ({{ accountConcurrencyList.length }})</span>
+          </div>
+          <div class="table-container compact">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>账号</th>
+                  <th>并发</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in accountConcurrencyList" :key="item.account_id">
+                  <td>{{ getAccountName(item.account_id) }}</td>
+                  <td>
+                    <span :class="getConcurrencyClass(item.concurrency, item.max_concurrency)">
+                      {{ item.concurrency }}
+                    </span> / {{ item.max_concurrency }}
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-xs" @click="resetAccountConcurrency(item.account_id)">
                       重置
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </el-card>
-          </el-col>
-          <el-col :span="12">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <span>用户并发 ({{ userConcurrencyList.length }})</span>
-                </div>
-              </template>
-              <el-table :data="userConcurrencyList" size="small" max-height="400">
-                <el-table-column label="用户" min-width="120">
-                  <template #default="{ row }">
-                    {{ getUserName(row.user_id) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="并发" width="120" align="center">
-                  <template #default="{ row }">
-                    <span :class="getConcurrencyClass(row.concurrency, row.max_concurrency)">
-                      {{ row.concurrency }}
-                    </span> / {{ row.max_concurrency }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="80" align="center">
-                  <template #default="{ row }">
-                    <el-button link type="danger" size="small" @click="resetUserConcurrency(row.user_id)">
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="accountConcurrencyList.length === 0" class="empty-state small">
+              <span>暂无数据</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 用户并发 -->
+        <div class="table-card">
+          <div class="card-toolbar">
+            <span class="toolbar-title">用户并发 ({{ userConcurrencyList.length }})</span>
+          </div>
+          <div class="table-container compact">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>并发</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in userConcurrencyList" :key="item.user_id">
+                  <td>{{ getUserName(item.user_id) }}</td>
+                  <td>
+                    <span :class="getConcurrencyClass(item.concurrency, item.max_concurrency)">
+                      {{ item.concurrency }}
+                    </span> / {{ item.max_concurrency }}
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-xs" @click="resetUserConcurrency(item.user_id)">
                       重置
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-tab-pane>
-    </el-tabs>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="userConcurrencyList.length === 0" class="empty-state small">
+              <span>暂无数据</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 清除全部确认弹窗 -->
+    <Teleport to="body">
+      <div v-if="clearAllDialogVisible" class="modal-overlay" @click.self="clearAllDialogVisible = false">
+        <div class="modal modal-sm">
+          <div class="modal-header danger">
+            <div class="danger-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h2>确认清除</h2>
+          </div>
+          <div class="modal-body">
+            <p class="delete-message">确定要清除所有会话缓存吗？此操作不可撤销。</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="clearAllDialogVisible = false">取消</button>
+            <button class="btn btn-danger" @click="clearAllSessions">确认清除</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { ElMessage } from '@/utils/toast'
 import api from '@/api'
 
 // 配置
 const loadingConfig = ref(false)
+const savingConfig = ref(false)
 const configForm = reactive({
   session_ttl: 60,
   session_renewal_ttl: 14,
@@ -302,11 +410,13 @@ const sessionSearch = ref('')
 const accountNames = ref({})
 const userNames = ref({})
 const apiKeyLabels = ref({})
-const apiKeyFullMap = ref({})
 
 // 不可用账号
 const loadingUnavailable = ref(false)
 const unavailableList = ref([])
+
+// 清除确认
+const clearAllDialogVisible = ref(false)
 
 // 并发统计（从会话列表中计算）
 const accountConcurrencyList = computed(() => {
@@ -357,15 +467,13 @@ function formatTime(time) {
 }
 
 function getConcurrencyClass(current, limit) {
-  if (current >= limit) return 'danger'
-  if (current >= limit * 0.8) return 'warning'
-  return 'success'
+  if (current >= limit) return 'concurrency-danger'
+  if (current >= limit * 0.8) return 'concurrency-warning'
+  return 'concurrency-success'
 }
 
-// 解析会话ID，提取可读部分
 function parseSessionId(sessionId) {
   if (!sessionId) return '-'
-  // 格式: apikey:{apiKeyID}:{x-session-id} 或 apikey:{apiKeyID}
   if (sessionId.startsWith('apikey:')) {
     const parts = sessionId.split(':')
     if (parts.length >= 3) {
@@ -376,7 +484,6 @@ function parseSessionId(sessionId) {
   return sessionId
 }
 
-// 格式化剩余时间
 function formatTTL(seconds) {
   if (!seconds || seconds <= 0) return '已过期'
   if (seconds < 60) return `${seconds}秒`
@@ -384,42 +491,31 @@ function formatTTL(seconds) {
   return `${Math.floor(seconds / 3600)}时${Math.floor((seconds % 3600) / 60)}分`
 }
 
-// 获取TTL显示类型
-function getTTLType(seconds) {
+function getTTLClass(seconds) {
   if (!seconds || seconds <= 0) return 'danger'
-  if (seconds < 300) return 'warning'  // 5分钟内
+  if (seconds < 300) return 'warning'
   return 'success'
 }
 
-// 获取账号名称
 function getAccountName(accountId) {
   if (!accountId) return '-'
   return accountNames.value[accountId] || `#${accountId}`
 }
 
-// 获取用户名称
 function getUserName(userId) {
   if (!userId) return '-'
   return userNames.value[userId] || `#${userId}`
 }
 
-// 获取 API Key 显示文本
 function getAPIKeyLabel(apiKeyId) {
   if (!apiKeyId) return '-'
   return apiKeyLabels.value[apiKeyId] || 'sk-...'
 }
 
-function getAPIKeyTooltip(apiKeyId) {
-  if (!apiKeyId) return ''
-  return apiKeyFullMap.value[apiKeyId] || apiKeyLabels.value[apiKeyId] || ''
-}
-
-// 过滤会话
 function filterSessions() {
   // 搜索在 computed 中实现
 }
 
-// 加载配置
 async function fetchConfig() {
   loadingConfig.value = true
   try {
@@ -437,18 +533,17 @@ async function fetchConfig() {
 }
 
 async function saveConfig() {
-  loadingConfig.value = true
+  savingConfig.value = true
   try {
     await api.updateCacheConfig(configForm)
     ElMessage.success('配置已保存')
   } catch (e) {
-    console.error('Failed to save config:', e)
+    ElMessage.error('保存失败')
   } finally {
-    loadingConfig.value = false
+    savingConfig.value = false
   }
 }
 
-// 加载会话列表
 async function loadSessions() {
   loadingSessions.value = true
   try {
@@ -457,12 +552,10 @@ async function loadSessions() {
     sessions.value = res.data?.sessions || []
     sessionTotal.value = res.data?.total || 0
 
-    // 收集需要查询名称的账号和用户ID
     const accountIds = [...new Set(sessions.value.map(s => s.account_id).filter(Boolean))]
     const userIds = [...new Set(sessions.value.map(s => s.user_id).filter(Boolean))]
     const apiKeyIds = [...new Set(sessions.value.map(s => s.api_key_id).filter(Boolean))]
 
-    // 批量获取账号名称（如果API支持）
     await loadAccountNames(accountIds)
     await loadUserNames(userIds)
     await loadAPIKeyLabels(apiKeyIds)
@@ -473,14 +566,12 @@ async function loadSessions() {
   }
 }
 
-// 加载账号名称
 async function loadAccountNames(accountIds) {
   if (!accountIds.length) return
   try {
     const missing = accountIds.filter(id => id && !accountNames.value[id])
     if (!missing.length) return
 
-    // 账户列表接口返回 { items, total, page }，旧代码误用 list 导致一直回退显示 #id
     const res = await api.getAccounts({ page: 1, page_size: 1000 })
     const items = res.data?.items || res.data?.list || []
     items.forEach(acc => {
@@ -489,7 +580,6 @@ async function loadAccountNames(accountIds) {
       }
     })
 
-    // 如果分页未覆盖到全部账号，补充按ID查询（仅查当前页缺失的）
     for (const id of missing) {
       if (!accountNames.value[id]) {
         try {
@@ -507,14 +597,12 @@ async function loadAccountNames(accountIds) {
   }
 }
 
-// 加载用户名称
 async function loadUserNames(userIds) {
   if (!userIds.length) return
   try {
     const missing = userIds.filter(id => id && !userNames.value[id])
     if (!missing.length) return
 
-    // 后端提供不分页接口 /admin/users/all，避免分页漏掉导致名称缺失
     const res = await api.getAllUsers()
     const items = res.data?.items || res.data?.list || []
     items.forEach(user => {
@@ -527,14 +615,12 @@ async function loadUserNames(userIds) {
   }
 }
 
-// 加载 API Key 显示文本（名称 + 前缀）
 async function loadAPIKeyLabels(apiKeyIds) {
   if (!apiKeyIds.length) return
   const missing = apiKeyIds.filter(id => id && !apiKeyLabels.value[id])
   if (!missing.length) return
 
   try {
-    // 按需批量查询，避免拉全量 API Key 列表导致页面卡顿
     const res = await api.adminLookupAPIKeys(missing)
     const items = res.data?.items || []
     items.forEach(k => {
@@ -542,16 +628,12 @@ async function loadAPIKeyLabels(apiKeyIds) {
       if (k.key_prefix) {
         apiKeyLabels.value[k.id] = k.key_prefix
       }
-      if (k.key_full) {
-        apiKeyFullMap.value[k.id] = k.key_full
-      }
     })
   } catch (e) {
     console.error('Failed to load API key labels:', e)
   }
 }
 
-// 移除会话
 async function removeSession(sessionId) {
   try {
     await api.removeCacheSession(sessionId)
@@ -562,19 +644,22 @@ async function removeSession(sessionId) {
   }
 }
 
-// 清除所有会话
+function confirmClearAll() {
+  clearAllDialogVisible.value = true
+}
+
 async function clearAllSessions() {
   try {
     await api.clearCache('sessions')
     ElMessage.success('所有会话已清除')
     sessions.value = []
     sessionTotal.value = 0
+    clearAllDialogVisible.value = false
   } catch (e) {
     ElMessage.error('清除失败')
   }
 }
 
-// 加载不可用账号
 async function loadUnavailable() {
   loadingUnavailable.value = true
   try {
@@ -587,7 +672,6 @@ async function loadUnavailable() {
   }
 }
 
-// 清除不可用标记
 async function clearUnavailable(accountId) {
   try {
     await api.clearAccountUnavailable(accountId)
@@ -598,7 +682,6 @@ async function clearUnavailable(accountId) {
   }
 }
 
-// 重置账号并发
 async function resetAccountConcurrency(accountId) {
   try {
     await api.resetAccountConcurrency(accountId)
@@ -609,7 +692,6 @@ async function resetAccountConcurrency(accountId) {
   }
 }
 
-// 重置用户并发
 async function resetUserConcurrency(userId) {
   try {
     await api.resetUserConcurrency(userId)
@@ -621,12 +703,13 @@ async function resetUserConcurrency(userId) {
 }
 
 function handleTabChange(tab) {
+  activeTab.value = tab
   if (tab === 'sessions') {
     loadSessions()
   } else if (tab === 'unavailable') {
     loadUnavailable()
   } else if (tab === 'concurrency') {
-    loadSessions() // 并发统计从会话列表计算
+    loadSessions()
   }
 }
 
@@ -638,7 +721,6 @@ function refreshAll() {
   }
 }
 
-// 自动刷新（每30秒）
 function startAutoRefresh() {
   refreshTimer = setInterval(() => {
     if (activeTab.value === 'sessions') {
@@ -667,82 +749,650 @@ onUnmounted(() => {
 
 <style scoped>
 .cache-page {
-  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
+/* 页面标题 */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: var(--apple-spacing-xl);
 }
 
-.page-header h2 {
+.header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-size: var(--apple-text-3xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+  margin: 0 0 var(--apple-spacing-xs) 0;
+}
+
+.page-subtitle {
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-secondary);
   margin: 0;
 }
 
+/* 配置卡片 */
 .config-card {
-  margin-bottom: 20px;
-}
-
-.config-card .el-form-item {
-  margin-bottom: 0;
-}
-
-.unit {
-  margin-left: 8px;
-  color: #909399;
-  font-size: 13px;
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card);
+  margin-bottom: var(--apple-spacing-xl);
+  overflow: hidden;
 }
 
 .card-header {
+  padding: var(--apple-spacing-lg);
+  border-bottom: 1px solid var(--apple-separator);
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: var(--apple-text-md);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+}
+
+.config-form {
+  padding: var(--apple-spacing-lg);
+  transition: opacity var(--apple-duration-fast);
+}
+
+.config-form.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.config-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--apple-spacing-lg);
+  align-items: flex-end;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--apple-spacing-xs);
+}
+
+.config-item label {
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-primary);
+}
+
+.config-item.action {
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+}
+
+.input-group .form-input {
+  width: 100px;
+}
+
+.input-suffix {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-tertiary);
+}
+
+/* Tabs */
+.tabs-container {
+  margin-bottom: var(--apple-spacing-lg);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--apple-spacing-xs);
+  background: var(--apple-bg-secondary);
+  padding: var(--apple-spacing-xs);
+  border-radius: var(--apple-radius-md);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-secondary);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tab:hover {
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-tertiary);
+}
+
+.tab.active {
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-primary);
+  box-shadow: var(--apple-shadow-xs);
+}
+
+/* 表格卡片 */
+.table-card {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card);
+  overflow: hidden;
+}
+
+.card-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  border-bottom: 1px solid var(--apple-separator);
 }
 
-.header-actions {
+.toolbar-title {
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+}
+
+.search-box {
   display: flex;
-  gap: 10px;
   align-items: center;
+  max-width: 300px;
+  position: relative;
 }
 
-.no-data {
-  color: #c0c4cc;
+.search-box svg {
+  position: absolute;
+  left: var(--apple-spacing-sm);
+  width: 16px;
+  height: 16px;
+  color: var(--apple-text-tertiary);
+  pointer-events: none;
 }
 
-.api-key-prefix {
-  background: #f3f4f6;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #4b5563;
+.search-box input {
+  width: 100%;
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  padding-left: 36px;
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-secondary);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
 }
 
-.success {
-  color: #67c23a;
-  font-weight: 600;
+.search-box input:focus {
+  outline: none;
+  border-color: var(--apple-blue);
 }
 
-.warning {
-  color: #e6a23c;
-  font-weight: 600;
+.table-container {
+  overflow-x: auto;
 }
 
-.danger {
-  color: #f56c6c;
-  font-weight: 600;
+.table-container.compact {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--apple-text-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--apple-separator);
+}
+
+.data-table th {
+  background: var(--apple-bg-secondary);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-secondary);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+.data-table tbody tr:hover {
+  background: var(--apple-bg-secondary);
 }
 
 .session-id {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  color: #606266;
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-secondary);
 }
 
+.api-key-code {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-secondary);
+  background: var(--apple-bg-tertiary);
+  padding: 2px 6px;
+  border-radius: var(--apple-radius-xs);
+}
+
+.model-cell {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reason-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-muted {
+  color: var(--apple-text-tertiary);
+}
+
+/* 徽章 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--apple-radius-full);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
+}
+
+.badge-primary { background: var(--apple-blue-light); color: var(--apple-blue); }
+.badge-success { background: var(--apple-green-light); color: var(--apple-green); }
+.badge-warning { background: var(--apple-orange-light); color: var(--apple-orange); }
+.badge-danger { background: var(--apple-red-light); color: var(--apple-red); }
+.badge-info { background: var(--apple-fill-tertiary); color: var(--apple-text-secondary); }
+
+.ttl-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--apple-radius-full);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
+}
+
+.ttl-badge.success { background: var(--apple-green-light); color: var(--apple-green); }
+.ttl-badge.warning { background: var(--apple-orange-light); color: var(--apple-orange); }
+.ttl-badge.danger { background: var(--apple-red-light); color: var(--apple-red); }
+
+.concurrency-success { color: var(--apple-green); font-weight: var(--apple-font-semibold); }
+.concurrency-warning { color: var(--apple-orange); font-weight: var(--apple-font-semibold); }
+.concurrency-danger { color: var(--apple-red); font-weight: var(--apple-font-semibold); }
+
+/* 操作按钮 */
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--apple-radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--apple-fill-quaternary);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.action-btn:hover {
+  background: var(--apple-blue);
+  color: white;
+}
+
+.action-btn.danger:hover {
+  background: var(--apple-red);
+}
+
+/* 分页 */
 .pagination-wrap {
-  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  border-top: 1px solid var(--apple-separator);
+}
+
+.pagination-info {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-md);
+}
+
+.page-size-select {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+  background: var(--apple-bg-primary);
+}
+
+.page-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--apple-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--apple-fill-quaternary);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.page-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--apple-blue);
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-current {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* 加载和空状态 */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--apple-spacing-xxxl);
+  color: var(--apple-text-tertiary);
+}
+
+.loading-state.small, .empty-state.small {
+  padding: var(--apple-spacing-xl);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--apple-fill-tertiary);
+  border-top-color: var(--apple-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--apple-spacing-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--apple-spacing-md);
+  opacity: 0.5;
+}
+
+/* 并发网格 */
+.concurrency-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--apple-spacing-lg);
+}
+
+/* 按钮 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-lg);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  cursor: pointer;
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-xs);
+}
+
+.btn-xs {
+  padding: 2px var(--apple-spacing-xs);
+  font-size: var(--apple-text-xs);
+}
+
+.btn-primary {
+  background: var(--apple-blue);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--apple-blue-hover);
+}
+
+.btn-secondary {
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--apple-fill-secondary);
+}
+
+.btn-danger {
+  background: var(--apple-red);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #e6362d;
+}
+
+.btn-success {
+  background: var(--apple-green);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #2db84d;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--apple-blue);
+  border: 1px solid var(--apple-blue);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--apple-blue-light);
+}
+
+/* 表单 */
+.form-input {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-primary);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px var(--apple-blue-light);
+}
+
+/* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--apple-z-modal);
+  padding: var(--apple-spacing-xl);
+}
+
+.modal {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-xl);
+  box-shadow: var(--apple-shadow-modal);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.modal-sm { max-width: 400px; }
+
+.modal-header {
+  padding: var(--apple-spacing-xl);
+  border-bottom: 1px solid var(--apple-separator);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header.danger {
+  flex-direction: column;
+  text-align: center;
+  gap: var(--apple-spacing-md);
+}
+
+.danger-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--apple-orange-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.danger-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--apple-orange);
+}
+
+.modal-header h2 {
+  font-size: var(--apple-text-lg);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+  margin: 0;
+}
+
+.modal-body {
+  padding: var(--apple-spacing-xl);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: var(--apple-spacing-lg) var(--apple-spacing-xl);
+  border-top: 1px solid var(--apple-separator);
   display: flex;
   justify-content: flex-end;
+  gap: var(--apple-spacing-sm);
+}
+
+.delete-message {
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .config-row {
+    flex-direction: column;
+  }
+
+  .concurrency-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    gap: var(--apple-spacing-lg);
+  }
+
+  .tabs {
+    flex-direction: column;
+  }
+
+  .card-toolbar {
+    flex-direction: column;
+    gap: var(--apple-spacing-sm);
+  }
+
+  .search-box {
+    max-width: 100%;
+    width: 100%;
+  }
 }
 </style>

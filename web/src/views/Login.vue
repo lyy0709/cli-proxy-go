@@ -1,94 +1,153 @@
 <!--
- * 文件作用：用户登录页面，提供系统入口认证
+ * 文件作用：用户登录页面 - Apple HIG 风格
  * 负责功能：
  *   - 用户名密码输入
  *   - 验证码获取和验证
  *   - 登录请求和状态管理
- *   - 登录成功后跳转
  * 重要程度：⭐⭐⭐⭐ 重要（系统入口）
- * 依赖模块：element-plus, vue-router, user store, api
 -->
 <template>
-  <div class="login-container">
+  <div class="login-page">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+      <div class="bg-circle bg-circle-1"></div>
+      <div class="bg-circle bg-circle-2"></div>
+      <div class="bg-circle bg-circle-3"></div>
+    </div>
+
+    <!-- 登录卡片 -->
     <div class="login-card">
-      <h2 class="login-title">Cli-Proxy</h2>
-      <p class="login-subtitle">AI API 代理管理平台</p>
-      <p class="welcome-text">欢迎各位</p>
+      <!-- Logo -->
+      <div class="login-header">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1 class="login-title">Cli-Proxy</h1>
+        <p class="login-subtitle">AI API 代理管理平台</p>
+      </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleLogin">
-        <el-form-item prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="用户名"
-            prefix-icon="User"
-            size="large"
-          />
-        </el-form-item>
+      <!-- 登录表单 -->
+      <form class="login-form" @submit.prevent="handleLogin">
+        <!-- 用户名 -->
+        <div class="form-group">
+          <label class="form-label">用户名</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <input
+              v-model="form.username"
+              type="text"
+              class="form-input"
+              placeholder="请输入用户名"
+              autocomplete="username"
+            />
+          </div>
+          <span v-if="errors.username" class="form-error">{{ errors.username }}</span>
+        </div>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="密码"
-            prefix-icon="Lock"
-            size="large"
-            show-password
-          />
-        </el-form-item>
+        <!-- 密码 -->
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            <input
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              class="form-input"
+              placeholder="请输入密码"
+              autocomplete="current-password"
+            />
+            <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+              <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <span v-if="errors.password" class="form-error">{{ errors.password }}</span>
+        </div>
 
-        <el-form-item v-if="captchaEnabled" prop="captcha">
+        <!-- 验证码 -->
+        <div v-if="captchaEnabled" class="form-group">
+          <label class="form-label">验证码</label>
           <div class="captcha-row">
-            <el-input
-              v-model="form.captcha"
-              placeholder="验证码"
-              size="large"
-              class="captcha-input"
-              @keyup.enter="handleLogin"
-            />
-            <img
-              v-if="captchaImage"
-              :src="captchaImage"
-              class="captcha-image"
-              @click="refreshCaptcha"
-              title="点击刷新验证码"
-            />
-            <div v-else class="captcha-placeholder" @click="refreshCaptcha">
-              加载中...
+            <div class="input-wrapper captcha-input">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+              </svg>
+              <input
+                v-model="form.captcha"
+                type="text"
+                class="form-input"
+                placeholder="请输入验证码"
+                @keyup.enter="handleLogin"
+              />
+            </div>
+            <div class="captcha-image-wrapper" @click="refreshCaptcha">
+              <img v-if="captchaImage" :src="captchaImage" class="captcha-image" alt="验证码" />
+              <div v-else class="captcha-placeholder">
+                <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                  <path d="M12 2a10 10 0 019.95 9" stroke-linecap="round"/>
+                </svg>
+              </div>
             </div>
           </div>
-        </el-form-item>
+          <span v-if="errors.captcha" class="form-error">{{ errors.captcha }}</span>
+        </div>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="loading"
-            class="login-btn"
-            @click="handleLogin"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-      </el-form>
+        <!-- 登录按钮 -->
+        <button type="submit" class="login-btn" :disabled="loading">
+          <svg v-if="loading" class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+            <path d="M12 2a10 10 0 019.95 9" stroke-linecap="round"/>
+          </svg>
+          <span v-else>登录</span>
+        </button>
+      </form>
+
+      <!-- 返回首页 -->
+      <div class="login-footer">
+        <router-link to="/" class="back-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12,19 5,12 12,5"/>
+          </svg>
+          返回首页
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/toast'
 import api from '@/api'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const formRef = ref()
 const loading = ref(false)
+const showPassword = ref(false)
 const captchaImage = ref('')
 const captchaId = ref('')
-const captchaEnabled = ref(true) // 默认启用
+const captchaEnabled = ref(true)
 
 const form = reactive({
   username: '',
@@ -96,16 +155,35 @@ const form = reactive({
   captcha: ''
 })
 
-const rules = computed(() => {
-  const baseRules = {
-    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-    password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-  }
-  if (captchaEnabled.value) {
-    baseRules.captcha = [{ required: true, message: '请输入验证码', trigger: 'blur' }]
-  }
-  return baseRules
+const errors = reactive({
+  username: '',
+  password: '',
+  captcha: ''
 })
+
+function validate() {
+  let valid = true
+  errors.username = ''
+  errors.password = ''
+  errors.captcha = ''
+
+  if (!form.username.trim()) {
+    errors.username = '请输入用户名'
+    valid = false
+  }
+
+  if (!form.password) {
+    errors.password = '请输入密码'
+    valid = false
+  }
+
+  if (captchaEnabled.value && !form.captcha.trim()) {
+    errors.captcha = '请输入验证码'
+    valid = false
+  }
+
+  return valid
+}
 
 async function refreshCaptcha() {
   try {
@@ -115,15 +193,13 @@ async function refreshCaptcha() {
       captchaId.value = res.data.captcha_id
       captchaImage.value = res.data.image
     }
-  } catch (e) {
-    // 获取验证码失败时默认不启用验证码
+  } catch {
     captchaEnabled.value = false
   }
 }
 
 async function handleLogin() {
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!validate()) return
 
   loading.value = true
   try {
@@ -137,10 +213,8 @@ async function handleLogin() {
     }
     await userStore.login(loginData)
     ElMessage.success('登录成功')
-    // 直接走 /dashboard 做角色分流，避免多余跳转带来的加载与卡顿
     router.push('/dashboard')
-  } catch (e) {
-    // 登录失败刷新验证码
+  } catch {
     if (captchaEnabled.value) {
       refreshCaptcha()
       form.captcha = ''
@@ -156,74 +230,295 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.login-container {
-  height: 100vh;
+.login-page {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--apple-spacing-xl);
+  position: relative;
+  overflow: hidden;
 }
 
-.login-card {
+/* 背景装饰 */
+.bg-decoration {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bg-circle-1 {
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  right: -100px;
+}
+
+.bg-circle-2 {
   width: 400px;
-  padding: 40px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  height: 400px;
+  bottom: -100px;
+  left: -50px;
+}
+
+.bg-circle-3 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 20%;
+}
+
+/* 登录卡片 */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-xxl);
+  box-shadow: var(--apple-shadow-xl);
+  padding: var(--apple-spacing-xxl);
+  position: relative;
+  z-index: 1;
+  animation: apple-scale-in var(--apple-duration-normal) var(--apple-ease-spring);
+}
+
+/* 头部 */
+.login-header {
+  text-align: center;
+  margin-bottom: var(--apple-spacing-xxl);
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--apple-spacing-lg);
+  background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
+  border-radius: var(--apple-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  color: white;
 }
 
 .login-title {
-  text-align: center;
-  font-size: 28px;
-  color: #333;
-  margin-bottom: 8px;
+  font-size: var(--apple-text-2xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+  margin-bottom: var(--apple-spacing-xs);
 }
 
 .login-subtitle {
-  text-align: center;
-  color: #999;
-  margin-bottom: 10px;
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
 }
 
-.welcome-text {
-  text-align: center;
-  color: #667eea;
-  font-size: 14px;
-  margin-bottom: 20px;
-  font-weight: 500;
+/* 表单 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--apple-spacing-lg);
 }
 
-.login-btn {
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--apple-spacing-xs);
+}
+
+.form-label {
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-primary);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: var(--apple-spacing-md);
+  width: 18px;
+  height: 18px;
+  color: var(--apple-text-tertiary);
+  pointer-events: none;
+}
+
+.form-input {
   width: 100%;
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  padding-left: 44px;
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-primary);
+  background: var(--apple-fill-quaternary);
+  border: 1px solid transparent;
+  border-radius: var(--apple-radius-md);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
 }
 
+.form-input::placeholder {
+  color: var(--apple-text-placeholder);
+}
+
+.form-input:hover {
+  background: var(--apple-fill-tertiary);
+}
+
+.form-input:focus {
+  background: var(--apple-bg-primary);
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px var(--apple-blue-light);
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--apple-spacing-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--apple-text-tertiary);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.password-toggle:hover {
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-secondary);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.form-error {
+  font-size: var(--apple-text-xs);
+  color: var(--apple-red);
+}
+
+/* 验证码 */
 .captcha-row {
   display: flex;
-  gap: 10px;
-  width: 100%;
+  gap: var(--apple-spacing-sm);
 }
 
 .captcha-input {
   flex: 1;
 }
 
-.captcha-image {
-  height: 40px;
-  cursor: pointer;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
-}
-
-.captcha-placeholder {
-  height: 40px;
+.captcha-image-wrapper {
   width: 120px;
+  height: 44px;
+  border-radius: var(--apple-radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--apple-fill-quaternary);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
-  color: #999;
-  font-size: 12px;
-  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.captcha-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.captcha-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 登录按钮 */
+.login-btn {
+  width: 100%;
+  padding: var(--apple-spacing-md);
+  background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
+  color: white;
+  font-size: var(--apple-text-base);
+  font-weight: var(--apple-font-semibold);
+  border-radius: var(--apple-radius-md);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  margin-top: var(--apple-spacing-sm);
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 底部 */
+.login-footer {
+  margin-top: var(--apple-spacing-xl);
+  text-align: center;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
+  text-decoration: none;
+  transition: color var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.back-link:hover {
+  color: var(--apple-blue);
+}
+
+.back-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .login-card {
+    padding: var(--apple-spacing-xl);
+  }
+
+  .captcha-image-wrapper {
+    width: 100px;
+  }
 }
 </style>

@@ -361,7 +361,6 @@ func (h *APIKeyHandler) AdminLookup(c *gin.Context) {
 		items = append(items, gin.H{
 			"id":         k.ID,
 			"key_prefix": k.KeyPrefix,
-			"key_full":   k.KeyFull,
 		})
 	}
 

@@ -1,238 +1,298 @@
 <!--
- * 文件作用：请求日志页面，展示API请求统计
+ * 文件作用：请求日志页面 - Apple HIG 风格
  * 负责功能：
  *   - 每日请求汇总
  *   - 按模型统计
  *   - 用户详细记录查询
  *   - Token和费用统计
  * 重要程度：⭐⭐⭐ 一般（日志查看）
- * 依赖模块：element-plus, api
 -->
 <template>
-  <div class="logs-page">
+  <div class="request-logs-page">
+    <!-- 页面标题 -->
     <div class="page-header">
-      <h2>请求日志</h2>
-      <el-button @click="refreshAll">
-        <el-icon><Refresh /></el-icon> 刷新
-      </el-button>
+      <div class="header-content">
+        <h1 class="page-title">请求日志</h1>
+        <p class="page-subtitle">查看 API 请求统计和详细记录</p>
+      </div>
+      <button class="btn btn-outline" @click="refreshAll" :disabled="loadingDaily">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="{ spinning: loadingDaily }">
+          <polyline points="23,4 23,10 17,10"/>
+          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+        </svg>
+        刷新
+      </button>
     </div>
 
-    <!-- 统计摘要 -->
-    <el-row :gutter="20" class="summary-cards">
-      <el-col :span="6">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-value">{{ summary.total_requests || 0 }}</div>
-            <div class="stat-label">总请求数</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-value">{{ formatTokens(summary.total_tokens) }}</div>
-            <div class="stat-label">总Token</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover">
-          <div class="stat-item cost">
-            <div class="stat-value">${{ (summary.total_cost || 0).toFixed(4) }}</div>
-            <div class="stat-label">总费用</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-value">{{ modelStats.length }}</div>
-            <div class="stat-label">模型数</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon requests">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ summary.total_requests || 0 }}</span>
+          <span class="stat-label">总请求数</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon tokens">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ formatTokens(summary.total_tokens) }}</span>
+          <span class="stat-label">总 Token</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon cost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">${{ (summary.total_cost || 0).toFixed(4) }}</span>
+          <span class="stat-label">总费用</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon models">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ modelStats.length }}</span>
+          <span class="stat-label">模型数</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Tabs -->
-    <el-tabs v-model="activeTab">
+    <!-- Tab 切换 -->
+    <div class="tabs-container">
+      <div class="tabs-header">
+        <button :class="['tab-btn', { active: activeTab === 'daily' }]" @click="activeTab = 'daily'">每日汇总</button>
+        <button :class="['tab-btn', { active: activeTab === 'models' }]" @click="activeTab = 'models'">模型统计</button>
+        <button :class="['tab-btn', { active: activeTab === 'records' }]" @click="activeTab = 'records'">用户详细记录</button>
+      </div>
+
       <!-- 每日汇总 -->
-      <el-tab-pane label="每日汇总" name="daily">
-        <el-table :data="dailyStats" v-loading="loadingDaily" stripe>
-          <el-table-column prop="date" label="日期" width="120" />
-          <el-table-column prop="request_count" label="请求数" width="100" />
-          <el-table-column prop="total_tokens" label="Token" width="120">
-            <template #default="{ row }">
-              {{ formatTokens(row.total_tokens) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="费用" width="120">
-            <template #default="{ row }">
-              ${{ row.total_cost?.toFixed(4) || '0' }}
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-if="dailyStats.length === 0 && !loadingDaily" description="暂无数据" />
-      </el-tab-pane>
+      <div v-show="activeTab === 'daily'" class="tab-content">
+        <div class="table-card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th class="col-right">请求数</th>
+                  <th class="col-right">Token</th>
+                  <th class="col-right">费用</th>
+                </tr>
+              </thead>
+              <tbody v-if="!loadingDaily">
+                <tr v-for="row in dailyStats" :key="row.date">
+                  <td>{{ row.date }}</td>
+                  <td class="col-right">{{ row.request_count }}</td>
+                  <td class="col-right">{{ formatTokens(row.total_tokens) }}</td>
+                  <td class="col-right cost-cell">${{ row.total_cost?.toFixed(4) || '0' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="loadingDaily" class="loading-state">
+              <div class="loading-spinner"></div>
+              <span>加载中...</span>
+            </div>
+            <div v-if="!loadingDaily && dailyStats.length === 0" class="empty-state">
+              <span>暂无数据</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 模型统计 -->
-      <el-tab-pane label="模型统计" name="models">
-        <el-table :data="modelStats" v-loading="loadingModels" stripe>
-          <el-table-column prop="model" label="模型" min-width="200" />
-          <el-table-column prop="request_count" label="请求数" width="100" />
-          <el-table-column prop="total_tokens" label="Token" width="120">
-            <template #default="{ row }">
-              {{ formatTokens(row.total_tokens) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="费用" width="120">
-            <template #default="{ row }">
-              ${{ row.total_cost?.toFixed(4) || '0' }}
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-if="modelStats.length === 0 && !loadingModels" description="暂无数据" />
-      </el-tab-pane>
+      <div v-show="activeTab === 'models'" class="tab-content">
+        <div class="table-card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>模型</th>
+                  <th class="col-right">请求数</th>
+                  <th class="col-right">Token</th>
+                  <th class="col-right">费用</th>
+                </tr>
+              </thead>
+              <tbody v-if="!loadingModels">
+                <tr v-for="row in modelStats" :key="row.model">
+                  <td><code class="model-code">{{ row.model }}</code></td>
+                  <td class="col-right">{{ row.request_count }}</td>
+                  <td class="col-right">{{ formatTokens(row.total_tokens) }}</td>
+                  <td class="col-right cost-cell">${{ row.total_cost?.toFixed(4) || '0' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="loadingModels" class="loading-state">
+              <div class="loading-spinner"></div>
+              <span>加载中...</span>
+            </div>
+            <div v-if="!loadingModels && modelStats.length === 0" class="empty-state">
+              <span>暂无数据</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 用户详细记录 -->
-      <el-tab-pane label="用户详细记录" name="records">
-        <el-form :inline="true" style="margin-bottom: 16px">
-          <el-form-item label="选择用户">
-            <el-select v-model="selectedUserId" clearable placeholder="选择用户" @change="handleUserChange" filterable style="width: 160px">
-              <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="时间范围">
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              style="width: 240px"
-              :shortcuts="dateShortcuts"
-            />
-          </el-form-item>
-          <el-form-item label="模型">
-            <el-select v-model="filterModel" clearable placeholder="全部模型" filterable style="width: 200px">
-              <el-option v-for="m in availableModels" :key="m" :label="m" :value="m" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="fetchRecords" :disabled="!selectedUserId">查询</el-button>
-            <el-button @click="resetFilters">重置</el-button>
-          </el-form-item>
-        </el-form>
-
-        <el-alert v-if="!selectedUserId" type="info" :closable="false" style="margin-bottom: 16px">
-          请选择用户查看详细记录
-        </el-alert>
-
-        <el-table v-if="selectedUserId" :data="records" v-loading="loadingRecords" stripe>
-          <el-table-column prop="model" label="模型" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="request_ip" label="请求IP" width="120" show-overflow-tooltip />
-          <el-table-column label="输入" width="80">
-            <template #default="{ row }">
-              {{ formatTokens(row.input_tokens) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="输出" width="80">
-            <template #default="{ row }">
-              {{ formatTokens(row.output_tokens) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="缓存创建" width="90">
-            <template #default="{ row }">
-              <span :class="{ 'cache-highlight': row.cache_creation_input_tokens > 0 }">
-                {{ formatTokens(row.cache_creation_input_tokens) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="缓存读取" width="90">
-            <template #default="{ row }">
-              <span :class="{ 'cache-read-highlight': row.cache_read_input_tokens > 0 }">
-                {{ formatTokens(row.cache_read_input_tokens) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="总Token" width="90">
-            <template #default="{ row }">
-              {{ formatTokens(row.total_tokens) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="费用" width="90">
-            <template #default="{ row }">
-              ${{ (row.total_cost || 0).toFixed(4) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="时间" width="160">
-            <template #default="{ row }">
-              {{ formatTime(row.timestamp || row.request_time) }}
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pagination-wrap" v-if="selectedUserId && pagination.total > 0">
-          <el-pagination
-            v-model:current-page="pagination.page"
-            v-model:page-size="pagination.pageSize"
-            :total="pagination.total"
-            :page-sizes="[20, 50, 100]"
-            layout="total, sizes, prev, pager, next"
-            @change="fetchRecords"
-          />
+      <div v-show="activeTab === 'records'" class="tab-content">
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label class="filter-label">选择用户</label>
+            <select v-model="selectedUserId" @change="handleUserChange" class="filter-select">
+              <option value="">请选择</option>
+              <option v-for="user in users" :key="user.id" :value="user.id">{{ user.username }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">时间范围</label>
+            <div class="date-inputs">
+              <input type="date" v-model="dateStart" class="date-input" />
+              <span class="date-sep">至</span>
+              <input type="date" v-model="dateEnd" class="date-input" />
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">模型</label>
+            <select v-model="filterModel" class="filter-select">
+              <option value="">全部模型</option>
+              <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm" @click="fetchRecords" :disabled="!selectedUserId">查询</button>
+            <button class="btn btn-secondary btn-sm" @click="resetFilters">重置</button>
+          </div>
         </div>
-        <el-empty v-if="selectedUserId && records.length === 0 && !loadingRecords" description="暂无记录" />
-      </el-tab-pane>
-    </el-tabs>
+
+        <div v-if="!selectedUserId" class="info-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>请选择用户查看详细记录</span>
+        </div>
+
+        <div v-if="selectedUserId" class="table-card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>模型</th>
+                  <th>请求IP</th>
+                  <th class="col-right">输入</th>
+                  <th class="col-right">输出</th>
+                  <th class="col-right">缓存创建</th>
+                  <th class="col-right">缓存读取</th>
+                  <th class="col-right">总Token</th>
+                  <th class="col-right">费用</th>
+                  <th>时间</th>
+                </tr>
+              </thead>
+              <tbody v-if="!loadingRecords">
+                <tr v-for="row in records" :key="row.id">
+                  <td><code class="model-code">{{ row.model }}</code></td>
+                  <td><span class="ip-text">{{ row.request_ip }}</span></td>
+                  <td class="col-right">{{ formatTokens(row.input_tokens) }}</td>
+                  <td class="col-right">{{ formatTokens(row.output_tokens) }}</td>
+                  <td class="col-right">
+                    <span :class="{ 'cache-highlight': row.cache_creation_input_tokens > 0 }">
+                      {{ formatTokens(row.cache_creation_input_tokens) }}
+                    </span>
+                  </td>
+                  <td class="col-right">
+                    <span :class="{ 'cache-read-highlight': row.cache_read_input_tokens > 0 }">
+                      {{ formatTokens(row.cache_read_input_tokens) }}
+                    </span>
+                  </td>
+                  <td class="col-right">{{ formatTokens(row.total_tokens) }}</td>
+                  <td class="col-right cost-cell">${{ (row.total_cost || 0).toFixed(4) }}</td>
+                  <td><span class="time-text">{{ formatTime(row.timestamp || row.request_time) }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="loadingRecords" class="loading-state">
+              <div class="loading-spinner"></div>
+              <span>加载中...</span>
+            </div>
+            <div v-if="!loadingRecords && records.length === 0" class="empty-state">
+              <span>暂无记录</span>
+            </div>
+          </div>
+
+          <div v-if="pagination.total > 0" class="table-footer">
+            <div class="pagination-info">共 {{ pagination.total }} 条</div>
+            <div class="pagination-controls">
+              <select v-model="pagination.pageSize" @change="fetchRecords" class="page-size-select">
+                <option :value="20">20 条/页</option>
+                <option :value="50">50 条/页</option>
+                <option :value="100">100 条/页</option>
+              </select>
+              <div class="page-btns">
+                <button class="page-btn" :disabled="pagination.page <= 1" @click="pagination.page--; fetchRecords()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                </button>
+                <span class="page-current">{{ pagination.page }} / {{ Math.ceil(pagination.total / pagination.pageSize) || 1 }}</span>
+                <button class="page-btn" :disabled="pagination.page >= Math.ceil(pagination.total / pagination.pageSize)" @click="pagination.page++; fetchRecords()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
 import api from '@/api'
 
 const activeTab = ref('daily')
 const selectedUserId = ref(null)
 const users = ref([])
 
-// 筛选条件
-const dateRange = ref(null)
+const dateStart = ref('')
+const dateEnd = ref('')
 const filterModel = ref('')
 
-// 日期快捷选项
-const dateShortcuts = [
-  { text: '今天', value: () => { const d = new Date(); return [d, d] } },
-  { text: '最近7天', value: () => { const e = new Date(); const s = new Date(); s.setDate(s.getDate() - 7); return [s, e] } },
-  { text: '最近30天', value: () => { const e = new Date(); const s = new Date(); s.setDate(s.getDate() - 30); return [s, e] } },
-  { text: '本月', value: () => { const e = new Date(); const s = new Date(e.getFullYear(), e.getMonth(), 1); return [s, e] } },
-]
-
-// 可选模型列表（从模型统计中提取）
-const availableModels = computed(() => {
-  return modelStats.value.map(m => m.model).filter(Boolean)
-})
-
-// 汇总数据
 const summary = reactive({
   total_requests: 0,
   total_tokens: 0,
   total_cost: 0
 })
 
-// 每日汇总
 const dailyStats = ref([])
 const loadingDaily = ref(false)
-
-// 模型统计
 const modelStats = ref([])
 const loadingModels = ref(false)
-
-// 详细记录
 const records = ref([])
 const loadingRecords = ref(false)
 const pagination = reactive({ page: 1, pageSize: 20, total: 0 })
+
+const availableModels = computed(() => {
+  return modelStats.value.map(m => m.model).filter(Boolean)
+})
 
 function formatTokens(tokens) {
   if (!tokens) return '0'
@@ -258,11 +318,9 @@ async function fetchUsers() {
 async function fetchAllSummary() {
   loadingDaily.value = true
   loadingModels.value = true
-
   try {
     const res = await api.getAllUsageSummary({})
     const data = res.data || {}
-
     summary.total_requests = data.total_requests || 0
     summary.total_tokens = data.total_tokens || 0
     summary.total_cost = data.total_cost || 0
@@ -283,25 +341,19 @@ function handleUserChange() {
 
 async function fetchRecords() {
   if (!selectedUserId.value) return
-
   loadingRecords.value = true
   try {
     const params = {
       page: pagination.page,
       page_size: pagination.pageSize
     }
-
-    // 日期范围筛选
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.start_date = dateRange.value[0]
-      params.end_date = dateRange.value[1]
+    if (dateStart.value && dateEnd.value) {
+      params.start_date = dateStart.value
+      params.end_date = dateEnd.value
     }
-
-    // 模型筛选
     if (filterModel.value) {
       params.model = filterModel.value
     }
-
     const res = await api.getUserUsageRecords(selectedUserId.value, params)
     const data = res.data || {}
     records.value = data.items || []
@@ -314,7 +366,8 @@ async function fetchRecords() {
 }
 
 function resetFilters() {
-  dateRange.value = null
+  dateStart.value = ''
+  dateEnd.value = ''
   filterModel.value = ''
   pagination.page = 1
   if (selectedUserId.value) {
@@ -336,61 +389,305 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.request-logs-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 页面标题 */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: var(--apple-spacing-xl);
 }
 
-.page-header h2 {
-  color: #333;
+.header-content { flex: 1; }
+
+.page-title {
+  font-size: var(--apple-text-3xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+  margin: 0 0 var(--apple-spacing-xs) 0;
+}
+
+.page-subtitle {
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-secondary);
   margin: 0;
 }
 
-.summary-cards {
-  margin-bottom: 20px;
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--apple-spacing-md);
+  margin-bottom: var(--apple-spacing-xl);
 }
 
-.stat-item {
-  text-align: center;
-  padding: 10px 0;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #409eff;
-}
-
-.stat-item.cost .stat-value {
-  color: #67c23a;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 8px;
-}
-
-.token-info {
-  font-family: monospace;
-  font-size: 12px;
-}
-
-.pagination-wrap {
-  margin-top: 16px;
+.stat-card {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card);
+  padding: var(--apple-spacing-lg);
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: var(--apple-spacing-md);
 }
 
-.cache-highlight {
-  color: #e6a23c;
-  font-weight: bold;
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--apple-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.cache-read-highlight {
-  color: #67c23a;
-  font-weight: bold;
+.stat-icon svg { width: 24px; height: 24px; color: white; }
+.stat-icon.requests { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.stat-icon.tokens { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.stat-icon.cost { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+.stat-icon.models { background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%); }
+
+.stat-content { flex: 1; }
+.stat-value {
+  display: block;
+  font-size: var(--apple-text-xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+}
+.stat-label {
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-tertiary);
+}
+
+/* Tabs */
+.tabs-container {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card);
+  overflow: hidden;
+}
+
+.tabs-header {
+  display: flex;
+  border-bottom: 1px solid var(--apple-separator);
+  padding: 0 var(--apple-spacing-lg);
+}
+
+.tab-btn {
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--apple-duration-fast);
+}
+
+.tab-btn:hover { color: var(--apple-text-primary); }
+.tab-btn.active {
+  color: var(--apple-blue);
+  border-bottom-color: var(--apple-blue);
+}
+
+.tab-content { padding: var(--apple-spacing-lg); }
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--apple-spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--apple-spacing-lg);
+  padding: var(--apple-spacing-md);
+  background: var(--apple-bg-secondary);
+  border-radius: var(--apple-radius-md);
+}
+
+.filter-group { display: flex; flex-direction: column; gap: var(--apple-spacing-xxs); }
+.filter-label {
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-tertiary);
+}
+.filter-select, .date-input {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+  background: var(--apple-bg-primary);
+}
+.filter-select:focus, .date-input:focus {
+  outline: none;
+  border-color: var(--apple-blue);
+}
+
+.date-inputs { display: flex; align-items: center; gap: var(--apple-spacing-xs); }
+.date-sep { font-size: var(--apple-text-sm); color: var(--apple-text-tertiary); }
+.filter-actions { display: flex; gap: var(--apple-spacing-xs); align-items: flex-end; }
+
+/* 信息横幅 */
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-md);
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  background: var(--apple-blue-light);
+  border-radius: var(--apple-radius-md);
+  margin-bottom: var(--apple-spacing-lg);
+}
+.info-banner svg { width: 20px; height: 20px; color: var(--apple-blue); flex-shrink: 0; }
+.info-banner span { font-size: var(--apple-text-sm); color: var(--apple-blue); }
+
+/* 表格卡片 */
+.table-card {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-md);
+  border: 1px solid var(--apple-separator);
+  overflow: hidden;
+}
+
+.table-container { overflow-x: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--apple-text-sm);
+}
+
+.data-table th, .data-table td {
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--apple-separator);
+}
+
+.data-table th {
+  background: var(--apple-bg-secondary);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-secondary);
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover { background: var(--apple-bg-secondary); }
+.col-right { text-align: right; }
+.cost-cell { font-weight: var(--apple-font-semibold); color: var(--apple-green); }
+
+.model-code {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  background: var(--apple-fill-quaternary);
+  padding: 2px 6px;
+  border-radius: var(--apple-radius-xs);
+}
+
+.ip-text, .time-text {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-secondary);
+}
+
+.cache-highlight { color: var(--apple-orange); font-weight: var(--apple-font-semibold); }
+.cache-read-highlight { color: var(--apple-green); font-weight: var(--apple-font-semibold); }
+
+/* 加载和空状态 */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--apple-spacing-xxl);
+  color: var(--apple-text-tertiary);
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--apple-fill-tertiary);
+  border-top-color: var(--apple-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--apple-spacing-sm);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; }
+
+/* 分页 */
+.table-footer {
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  border-top: 1px solid var(--apple-separator);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-info { font-size: var(--apple-text-sm); color: var(--apple-text-secondary); }
+.pagination-controls { display: flex; align-items: center; gap: var(--apple-spacing-sm); }
+.page-size-select {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+}
+.page-btns { display: flex; align-items: center; gap: var(--apple-spacing-xs); }
+.page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--apple-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--apple-fill-quaternary);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast);
+}
+.page-btn svg { width: 14px; height: 14px; }
+.page-btn:hover:not(:disabled) { background: var(--apple-blue); color: white; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-current {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-lg);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast);
+  cursor: pointer;
+}
+.btn svg { width: 16px; height: 16px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: var(--apple-spacing-xs) var(--apple-spacing-md); }
+.btn-primary { background: var(--apple-blue); color: white; }
+.btn-primary:hover:not(:disabled) { background: var(--apple-blue-hover); }
+.btn-secondary { background: var(--apple-fill-tertiary); color: var(--apple-text-primary); }
+.btn-secondary:hover:not(:disabled) { background: var(--apple-fill-secondary); }
+.btn-outline {
+  background: transparent;
+  color: var(--apple-blue);
+  border: 1px solid var(--apple-blue);
+}
+.btn-outline:hover:not(:disabled) { background: var(--apple-blue-light); }
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-group { width: 100%; }
+  .filter-select, .date-inputs { width: 100%; }
 }
 </style>

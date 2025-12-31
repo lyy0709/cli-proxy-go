@@ -118,5 +118,30 @@ func Load(path string) error {
 		return fmt.Errorf("parse config: %w", err)
 	}
 
+	// 环境变量覆盖敏感配置（优先级高于配置文件）
+	overrideFromEnv()
+
 	return nil
+}
+
+// overrideFromEnv 从环境变量覆盖敏感配置
+func overrideFromEnv() {
+	// JWT Secret - 安全关键配置，强烈建议从环境变量设置
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		Cfg.JWT.Secret = secret
+	}
+
+	// MySQL 配置
+	if host := os.Getenv("DB_HOST"); host != "" {
+		Cfg.MySQL.Host = host
+	}
+	if user := os.Getenv("DB_USER"); user != "" {
+		Cfg.MySQL.User = user
+	}
+	if password := os.Getenv("DB_PASSWORD"); password != "" {
+		Cfg.MySQL.Password = password
+	}
+	if database := os.Getenv("DB_NAME"); database != "" {
+		Cfg.MySQL.Database = database
+	}
 }

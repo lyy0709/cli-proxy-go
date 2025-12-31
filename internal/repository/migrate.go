@@ -11,6 +11,10 @@
 package repository
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"os"
+
 	"cli-proxy/internal/model"
 	"cli-proxy/pkg/logger"
 )
@@ -52,13 +56,21 @@ func InitDefaultAdmin() error {
 		return nil
 	}
 
+	// 从环境变量获取初始密码，如果未设置则生成随机密码
+	password := os.Getenv("ADMIN_INITIAL_PASSWORD")
+	useRandomPassword := false
+	if password == "" {
+		password = generateRandomPassword(16)
+		useRandomPassword = true
+	}
+
 	admin := &model.User{
 		Username: "admin",
 		Email:    "admin@cli-proxy.local",
 		Role:     "admin",
 		Status:   "active",
 	}
-	if err := admin.SetPassword("admin123"); err != nil {
+	if err := admin.SetPassword(password); err != nil {
 		return err
 	}
 
@@ -66,8 +78,27 @@ func InitDefaultAdmin() error {
 		return err
 	}
 
-	log.Info("默认管理员已创建 | 用户名: admin | 密码: admin123")
+	if useRandomPassword {
+		log.Warn("============================================================")
+		log.Warn("默认管理员已创建")
+		log.Warn("用户名: admin")
+		log.Warn("随机密码: %s", password)
+		log.Warn("!! 请立即登录并修改密码 !!")
+		log.Warn("============================================================")
+	} else {
+		log.Info("默认管理员已创建 | 用户名: admin | 使用环境变量密码")
+	}
 	return nil
+}
+
+// generateRandomPassword 生成随机密码
+func generateRandomPassword(length int) string {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		// 如果随机生成失败，使用固定的备用密码
+		return "ChangeMe123!"
+	}
+	return hex.EncodeToString(bytes)[:length]
 }
 
 // InitDefaultConfigs 初始化默认系统配置

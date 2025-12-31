@@ -46,7 +46,7 @@ func (r *APIKeyRepository) GetByIDs(ids []uint) ([]model.APIKey, error) {
 	}
 
 	var keys []model.APIKey
-	err := r.db.Select("id", "name", "key_prefix", "key_full").
+	err := r.db.Select("id", "name", "key_prefix").
 		Where("id IN ?", ids).
 		Find(&keys).Error
 	return keys, err

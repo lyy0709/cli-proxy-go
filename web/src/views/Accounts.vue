@@ -1,5 +1,5 @@
 <!--
- * 文件作用：账户管理页面，管理多平台API账户
+ * 文件作用：账户管理页面 - Apple HIG 风格
  * 负责功能：
  *   - 多平台账户展示（Claude/OpenAI/Gemini）
  *   - 账户状态管理（启用/禁用/健康检测）
@@ -7,25 +7,30 @@
  *   - 账户CRUD操作
  *   - Token刷新和强制恢复
  * 重要程度：⭐⭐⭐⭐⭐ 核心（账户管理）
- * 依赖模块：element-plus, AccountForm组件, api
 -->
 <template>
   <div class="accounts-page">
     <!-- 页面头部 -->
     <div class="page-header">
-      <div class="header-left">
-        <h2>账户管理</h2>
-        <p class="header-desc">管理 Claude、Gemini、OpenAI 等账户与代理配置</p>
+      <div class="header-content">
+        <h1 class="page-title">账户管理</h1>
+        <p class="page-subtitle">管理 Claude、Gemini、OpenAI 等账户与代理配置</p>
       </div>
       <div class="header-actions">
-        <el-button @click="loadAccounts">
-          <i class="fa-solid fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+        <button class="btn btn-outline" @click="loadAccounts" :disabled="loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="{ spinning: loading }">
+            <polyline points="23,4 23,10 17,10"/>
+            <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
           刷新
-        </el-button>
-        <el-button type="primary" @click="showFormDialog = true">
-          <i class="fa-solid fa-plus"></i>
+        </button>
+        <button class="btn btn-primary" @click="showFormDialog = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
           添加账户
-        </el-button>
+        </button>
       </div>
     </div>
 
@@ -34,19 +39,29 @@
       <div
         v-for="platform in platformStats"
         :key="platform.key"
-        class="stat-card"
-        :class="{ active: filters.platform === platform.key }"
+        :class="['stat-card', { active: filters.platform === platform.key }]"
         @click="filterByPlatform(platform.key)"
       >
         <div class="stat-icon" :style="{ background: platform.gradient }">
-          <i :class="platform.icon"></i>
+          <svg v-if="platform.key === 'claude'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a9 9 0 019 9c0 3.9-2.5 7.2-6 8.4V22l-3-2-3 2v-2.6c-3.5-1.2-6-4.5-6-8.4a9 9 0 019-9z"/>
+          </svg>
+          <svg v-else-if="platform.key === 'openai'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12,2 2,7 12,12 22,7"/>
+            <polyline points="2,17 12,22 22,17"/>
+            <polyline points="2,12 12,17 22,12"/>
+          </svg>
         </div>
         <div class="stat-info">
           <h3>{{ platform.name }}</h3>
           <div class="stat-numbers">
             <span class="total">{{ platform.count }} 个账户</span>
             <span class="valid">
-              <i class="fa-solid fa-circle valid-dot"></i>
+              <span class="valid-dot"></span>
               {{ platform.validCount }} 可用
             </span>
           </div>
@@ -57,332 +72,289 @@
     <!-- 筛选和搜索 -->
     <div class="filter-bar">
       <div class="filter-left">
-        <el-select v-model="filters.status" clearable placeholder="状态筛选" @change="loadAccounts">
-          <el-option label="正常" value="valid" />
-          <el-option label="无效" value="invalid" />
-          <el-option label="限流中" value="rate_limited" />
-          <el-option label="Token过期" value="token_expired" />
-          <el-option label="疑似封号" value="suspended" />
-          <el-option label="已封号" value="banned" />
-          <el-option label="已禁用" value="disabled" />
-        </el-select>
-        <el-input
-          v-model="filters.search"
-          placeholder="搜索账户名称..."
-          clearable
-          style="width: 200px"
-          @input="handleSearch"
-        >
-          <template #prefix>
-            <i class="fa-solid fa-search"></i>
-          </template>
-        </el-input>
+        <select v-model="filters.status" @change="loadAccounts" class="filter-select">
+          <option value="">全部状态</option>
+          <option value="valid">正常</option>
+          <option value="invalid">无效</option>
+          <option value="rate_limited">限流中</option>
+          <option value="token_expired">Token过期</option>
+          <option value="suspended">疑似封号</option>
+          <option value="banned">已封号</option>
+          <option value="disabled">已禁用</option>
+        </select>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            v-model="filters.search"
+            placeholder="搜索账户名称..."
+            @input="handleSearch"
+          />
+        </div>
       </div>
       <div class="filter-right">
-        <el-tag v-if="filters.platform" closable @close="filters.platform = ''; loadAccounts()">
+        <span v-if="filters.platform" class="filter-tag">
           {{ getPlatformName(filters.platform) }}
-        </el-tag>
+          <button @click="filters.platform = ''; loadAccounts()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </span>
       </div>
     </div>
 
     <!-- 账户列表 -->
-    <el-card class="accounts-table-card" shadow="never">
-      <el-table
-        :data="accounts"
-        v-loading="loading"
-        stripe
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="50" />
-
-        <el-table-column label="#" width="60" align="center">
-          <template #default="{ $index }">
-            <span class="row-index">{{ (pagination.page - 1) * pagination.pageSize + $index + 1 }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="账户" min-width="200">
-          <template #default="{ row }">
-            <div class="account-cell">
-              <div class="account-avatar" :style="{ background: getTypeColor(row.type) }">
-                <i :class="getTypeIcon(row.type)"></i>
-              </div>
-              <div class="account-info">
-                <span class="account-name">{{ row.name }}</span>
-                <span class="account-type">{{ getTypeLabel(row.type, row) }}</span>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="平台/类型" width="180">
-          <template #default="{ row }">
-            <div class="platform-badge" :class="getPlatformClass(row.type)">
-              <i :class="getPlatformIcon(row.type)"></i>
-              <span>{{ getPlatformLabel(row.type) }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="状态" width="180">
-          <template #default="{ row }">
-            <div class="status-badge" :class="row.status">
-              <span class="status-dot"></span>
-              {{ getStatusLabel(row.status) }}
-            </div>
-            <!-- 限流倒计时 -->
-            <div v-if="row.status === 'rate_limited' && row.rate_limit_reset_at" class="status-detail rate-limit-reset">
-              <i class="fa-solid fa-clock"></i>
-              {{ formatResetTime(row.rate_limit_reset_at) }}
-            </div>
-            <!-- 下次检测时间 -->
-            <div v-if="row.next_health_check_at && ['rate_limited', 'suspended', 'banned', 'token_expired'].includes(row.status)" class="status-detail next-check">
-              <i class="fa-solid fa-stethoscope"></i>
-              下次检测: {{ formatNextCheck(row.next_health_check_at) }}
-            </div>
-            <!-- 疑似封号计数 -->
-            <div v-if="row.status === 'suspended' && row.suspended_count > 0" class="status-detail suspended-count">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              连续失败 {{ row.suspended_count }} 次
-            </div>
-            <!-- 错误信息 -->
-            <el-tooltip v-if="row.last_error && ['invalid', 'suspended', 'banned', 'token_expired'].includes(row.status)" :content="row.last_error" placement="top">
-              <div class="status-detail error-hint">
-                <i class="fa-solid fa-circle-info"></i>
-                查看错误
-              </div>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-
-        <!-- 用量进度条 -->
-        <el-table-column label="用量" width="180">
-          <template #default="{ row }">
-            <!-- Claude Official: 显示 5H/7D/7D-S 进度条 -->
-            <div v-if="row.type === 'claude-official' && hasUsageData(row)" class="usage-bars">
-              <!-- 5小时窗口 -->
-              <div class="usage-bar-item" v-if="row.five_hour_utilization !== null && row.five_hour_utilization !== undefined">
-                <div class="usage-bar-label">
-                  <span class="label-text">5H</span>
-                  <span class="label-value">{{ row.five_hour_utilization.toFixed(1) }}%</span>
+    <div class="table-card">
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-checkbox">
+                <input type="checkbox" :checked="selectedAccounts.length === accounts.length && accounts.length > 0" @change="toggleSelectAll" />
+              </th>
+              <th>#</th>
+              <th class="col-account">账户</th>
+              <th>平台/类型</th>
+              <th>状态</th>
+              <th>用量</th>
+              <th class="col-center">启用</th>
+              <th class="col-center">优先级</th>
+              <th class="col-center">并发</th>
+              <th class="col-right">请求数</th>
+              <th class="col-right">总费用</th>
+              <th>最后使用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody v-if="!loading">
+            <tr v-for="(account, index) in accounts" :key="account.id">
+              <td class="col-checkbox">
+                <input type="checkbox" :checked="isSelected(account.id)" @change="toggleSelect(account.id)" />
+              </td>
+              <td class="row-index">{{ (pagination.page - 1) * pagination.pageSize + index + 1 }}</td>
+              <td class="col-account">
+                <div class="account-cell">
+                  <div class="account-avatar" :style="{ background: getTypeColor(account.type) }">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                  </div>
+                  <div class="account-info">
+                    <span class="account-name">{{ account.name }}</span>
+                    <span class="account-type">{{ getTypeLabel(account.type, account) }}</span>
+                  </div>
                 </div>
-                <div class="usage-bar-track">
-                  <div
-                    class="usage-bar-fill"
-                    :class="getUsageBarClass(row.five_hour_utilization)"
-                    :style="{ width: Math.min(row.five_hour_utilization, 100) + '%' }"
-                  ></div>
+              </td>
+              <td>
+                <span :class="['platform-badge', getPlatformClass(account.type)]">
+                  {{ getPlatformLabel(account.type) }}
+                </span>
+              </td>
+              <td>
+                <div class="status-cell">
+                  <span :class="['status-badge', account.status]">
+                    <span class="status-dot"></span>
+                    {{ getStatusLabel(account.status) }}
+                  </span>
+                  <div v-if="account.status === 'rate_limited' && account.rate_limit_reset_at" class="status-detail">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                    {{ formatResetTime(account.rate_limit_reset_at) }}
+                  </div>
+                  <div v-if="account.status === 'suspended' && account.suspended_count > 0" class="status-detail warning">
+                    连续失败 {{ account.suspended_count }} 次
+                  </div>
                 </div>
-              </div>
-              <!-- 7天窗口 -->
-              <div class="usage-bar-item" v-if="row.seven_day_utilization !== null && row.seven_day_utilization !== undefined">
-                <div class="usage-bar-label">
-                  <span class="label-text">7D</span>
-                  <span class="label-value">{{ row.seven_day_utilization.toFixed(1) }}%</span>
+              </td>
+              <td>
+                <!-- Claude Official: 显示 5H/7D 进度条 -->
+                <div v-if="account.type === 'claude-official' && hasUsageData(account)" class="usage-bars">
+                  <div class="usage-bar-item" v-if="account.five_hour_utilization != null">
+                    <div class="usage-bar-label">
+                      <span class="label-text">5H</span>
+                      <span class="label-value">{{ account.five_hour_utilization.toFixed(1) }}%</span>
+                    </div>
+                    <div class="usage-bar-track">
+                      <div
+                        :class="['usage-bar-fill', getUsageBarClass(account.five_hour_utilization)]"
+                        :style="{ width: Math.min(account.five_hour_utilization, 100) + '%' }"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="usage-bar-item" v-if="account.seven_day_utilization != null">
+                    <div class="usage-bar-label">
+                      <span class="label-text">7D</span>
+                      <span class="label-value">{{ account.seven_day_utilization.toFixed(1) }}%</span>
+                    </div>
+                    <div class="usage-bar-track">
+                      <div
+                        :class="['usage-bar-fill', getUsageBarClass(account.seven_day_utilization)]"
+                        :style="{ width: Math.min(account.seven_day_utilization, 100) + '%' }"
+                      ></div>
+                    </div>
+                  </div>
                 </div>
-                <div class="usage-bar-track">
-                  <div
-                    class="usage-bar-fill"
-                    :class="getUsageBarClass(row.seven_day_utilization)"
-                    :style="{ width: Math.min(row.seven_day_utilization, 100) + '%' }"
-                  ></div>
+                <!-- 其他类型: 显示预算进度条或今日统计 -->
+                <div v-else-if="account.daily_budget > 0" class="usage-bars">
+                  <div class="usage-bar-item">
+                    <div class="usage-bar-label">
+                      <span class="label-text">今日</span>
+                      <span class="label-value">${{ formatCost(account.today_cost || 0) }} / ${{ formatCost(account.daily_budget) }}</span>
+                    </div>
+                    <div class="usage-bar-track">
+                      <div
+                        :class="['usage-bar-fill', getUsageBarClass(account.budget_utilization || 0)]"
+                        :style="{ width: Math.min(account.budget_utilization || 0, 100) + '%' }"
+                      ></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <!-- 7天Sonnet窗口 -->
-              <div class="usage-bar-item" v-if="row.seven_day_sonnet_utilization !== null && row.seven_day_sonnet_utilization !== undefined">
-                <div class="usage-bar-label">
-                  <span class="label-text">7D-S</span>
-                  <span class="label-value">{{ row.seven_day_sonnet_utilization.toFixed(1) }}%</span>
+                <div v-else-if="account.today_tokens > 0 || account.today_count > 0" class="usage-stats">
+                  <span class="usage-stat">${{ formatCost(account.today_cost || 0) }}</span>
+                  <span class="usage-stat">{{ formatTokens(account.today_tokens) }} tokens</span>
                 </div>
-                <div class="usage-bar-track">
-                  <div
-                    class="usage-bar-fill"
-                    :class="getUsageBarClass(row.seven_day_sonnet_utilization)"
-                    :style="{ width: Math.min(row.seven_day_sonnet_utilization, 100) + '%' }"
-                  ></div>
+                <span v-else class="no-data">-</span>
+              </td>
+              <td class="col-center">
+                <label class="toggle-switch">
+                  <input type="checkbox" v-model="account.enabled" @change="handleToggleEnabled(account)" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </td>
+              <td class="col-center">
+                <span class="badge badge-info">{{ account.priority }}</span>
+              </td>
+              <td class="col-center">
+                <span :class="['concurrency-badge', getConcurrencyClass(account)]">
+                  {{ account.current_concurrency || 0 }} / {{ account.max_concurrency || 5 }}
+                </span>
+              </td>
+              <td class="col-right">
+                <span class="mono">{{ formatNumber(account.request_count) }}</span>
+              </td>
+              <td class="col-right">
+                <span v-if="account.total_cost > 0" class="cost">${{ formatCost(account.total_cost) }}</span>
+                <span v-else class="no-data">-</span>
+              </td>
+              <td>
+                <span v-if="account.last_used_at" class="time-ago">{{ formatRelativeTime(account.last_used_at) }}</span>
+                <span v-else class="no-data">-</span>
+              </td>
+              <td>
+                <div class="action-group">
+                  <button class="action-btn" @click="handleEdit(account)" title="编辑">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button v-if="canHealthCheck(account)" class="action-btn info" @click="handleHealthCheck(account)" :disabled="healthCheckingIds.includes(account.id)" title="检测">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                  </button>
+                  <button v-if="canRecover(account)" class="action-btn success" @click="handleForceRecover(account)" :disabled="recoveringIds.includes(account.id)" title="恢复">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="23,4 23,10 17,10"/>
+                      <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                    </svg>
+                  </button>
+                  <button v-if="canRefreshToken(account)" class="action-btn warning" @click="handleRefreshToken(account)" :disabled="refreshingIds.includes(account.id)" title="刷新Token">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn danger" @click="confirmDelete(account)" title="删除">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3,6 5,6 21,6"/>
+                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
                 </div>
-              </div>
-            </div>
-            <!-- 其他类型: 显示预算进度条或今日统计 -->
-            <div v-else-if="row.daily_budget > 0" class="usage-bars">
-              <!-- 预算使用率进度条 -->
-              <div class="usage-bar-item">
-                <div class="usage-bar-label">
-                  <span class="label-text">今日</span>
-                  <span class="label-value">${{ formatCost(row.today_cost || 0) }} / ${{ formatCost(row.daily_budget) }}</span>
-                </div>
-                <div class="usage-bar-track">
-                  <div
-                    class="usage-bar-fill"
-                    :class="getUsageBarClass(row.budget_utilization || 0)"
-                    :style="{ width: Math.min(row.budget_utilization || 0, 100) + '%' }"
-                  ></div>
-                </div>
-              </div>
-              <!-- 今日请求统计 -->
-              <div class="usage-stat-row">
-                <span class="stat-label"><i class="fa-solid fa-coins"></i> {{ formatTokens(row.today_tokens) }}</span>
-                <span class="stat-label"><i class="fa-solid fa-arrow-right-arrow-left"></i> {{ row.today_count }} 次</span>
-              </div>
-            </div>
-            <!-- 无预算限制: 显示简单统计 -->
-            <div v-else-if="row.today_tokens > 0 || row.today_count > 0" class="usage-stats">
-              <div class="usage-stat-item">
-                <i class="fa-solid fa-dollar-sign"></i>
-                <span>${{ formatCost(row.today_cost || 0) }}</span>
-              </div>
-              <div class="usage-stat-item">
-                <i class="fa-solid fa-coins"></i>
-                <span>{{ formatTokens(row.today_tokens) }}</span>
-              </div>
-              <div class="usage-stat-item">
-                <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                <span>{{ row.today_count }} 次</span>
-              </div>
-            </div>
-            <span v-else class="no-usage">-</span>
-          </template>
-        </el-table-column>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        <el-table-column label="启用" width="80" align="center">
-          <template #default="{ row }">
-            <el-switch
-              v-model="row.enabled"
-              size="small"
-              @change="handleToggleEnabled(row)"
-            />
-          </template>
-        </el-table-column>
+        <div v-if="loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <span>加载中...</span>
+        </div>
 
-        <el-table-column label="优先级" width="90" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" type="info">{{ row.priority }}</el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="并发" width="100" align="center">
-          <template #default="{ row }">
-            <div class="concurrency-cell">
-              <span class="concurrency-current" :class="getConcurrencyClass(row)">
-                {{ row.current_concurrency || 0 }}
-              </span>
-              <span class="concurrency-separator">/</span>
-              <span class="concurrency-max">{{ row.max_concurrency || 5 }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="请求次数" width="100" align="right">
-          <template #default="{ row }">
-            <span class="request-count">{{ formatNumber(row.request_count) }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="总费用" width="110" align="right">
-          <template #default="{ row }">
-            <span class="total-cost" v-if="row.total_cost > 0">
-              ${{ formatCost(row.total_cost) }}
-            </span>
-            <span class="no-cost" v-else>-</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="今日用量" width="140" align="right">
-          <template #default="{ row }">
-            <div class="today-usage">
-              <span class="usage-tokens">{{ formatTokens(row.today_tokens) }}</span>
-              <span class="usage-count">{{ row.today_count || 0 }} 次</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="最后使用" width="150">
-          <template #default="{ row }">
-            <span class="last-used" v-if="row.last_used_at">{{ formatRelativeTime(row.last_used_at) }}</span>
-            <span class="no-used" v-else>-</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="代理" width="120">
-          <template #default="{ row }">
-            <el-tag v-if="row.proxy?.enabled" size="small" type="warning">
-              <i class="fa-solid fa-shield-halved"></i>
-              {{ row.proxy.type }}
-            </el-tag>
-            <span v-else class="no-proxy">-</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="操作" width="260" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleEdit(row)">
-              <i class="fa-solid fa-edit"></i> 编辑
-            </el-button>
-            <!-- 健康检测按钮 -->
-            <el-button
-              v-if="canHealthCheck(row)"
-              link
-              type="info"
-              size="small"
-              :loading="healthCheckingIds.includes(row.id)"
-              @click="handleHealthCheck(row)"
-            >
-              <i class="fa-solid fa-stethoscope"></i> 检测
-            </el-button>
-            <!-- 强制恢复按钮 -->
-            <el-button
-              v-if="canRecover(row)"
-              link
-              type="success"
-              size="small"
-              :loading="recoveringIds.includes(row.id)"
-              @click="handleForceRecover(row)"
-            >
-              <i class="fa-solid fa-rotate"></i> 恢复
-            </el-button>
-            <!-- 刷新 Token 按钮 -->
-            <el-button
-              v-if="canRefreshToken(row)"
-              link
-              type="warning"
-              size="small"
-              :loading="refreshingIds.includes(row.id)"
-              @click="handleRefreshToken(row)"
-            >
-              <i class="fa-solid fa-key"></i> 刷新Token
-            </el-button>
-            <el-popconfirm
-              title="确定删除该账户吗？"
-              confirm-button-text="删除"
-              cancel-button-text="取消"
-              @confirm="handleDelete(row.id)"
-            >
-              <template #reference>
-                <el-button link type="danger" size="small">
-                  <i class="fa-solid fa-trash"></i> 删除
-                </el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+        <div v-if="!loading && accounts.length === 0" class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
+          <span>暂无账户</span>
+        </div>
+      </div>
 
       <!-- 分页 -->
       <div class="table-footer">
         <div class="selection-info" v-if="selectedAccounts.length > 0">
           已选择 {{ selectedAccounts.length }} 项
-          <el-button link type="danger" @click="handleBatchDelete">批量删除</el-button>
+          <button class="link-btn danger" @click="handleBatchDelete">批量删除</button>
         </div>
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @change="loadAccounts"
-        />
+        <div class="pagination-wrap">
+          <div class="pagination-info">共 {{ pagination.total }} 条</div>
+          <div class="pagination-controls">
+            <select v-model="pagination.pageSize" @change="loadAccounts" class="page-size-select">
+              <option :value="10">10 条/页</option>
+              <option :value="20">20 条/页</option>
+              <option :value="50">50 条/页</option>
+            </select>
+            <div class="page-btns">
+              <button class="page-btn" :disabled="pagination.page <= 1" @click="pagination.page--; loadAccounts()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15,18 9,12 15,6"/>
+                </svg>
+              </button>
+              <span class="page-current">{{ pagination.page }} / {{ Math.ceil(pagination.total / pagination.pageSize) || 1 }}</span>
+              <button class="page-btn" :disabled="pagination.page >= Math.ceil(pagination.total / pagination.pageSize)" @click="pagination.page++; loadAccounts()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </el-card>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <Teleport to="body">
+      <div v-if="deleteDialogVisible" class="modal-overlay" @click.self="deleteDialogVisible = false">
+        <div class="modal modal-sm">
+          <div class="modal-header danger">
+            <div class="danger-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <h2>确认删除</h2>
+          </div>
+          <div class="modal-body">
+            <p class="delete-message">确定要删除账户 "{{ deleteTarget?.name }}" 吗？此操作不可撤销。</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="deleteDialogVisible = false">取消</button>
+            <button class="btn btn-danger" :disabled="deleting" @click="handleDelete">
+              <span v-if="deleting" class="btn-loading"></span>
+              {{ deleting ? '删除中...' : '删除' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- 添加/编辑弹窗 -->
     <AccountForm
@@ -395,11 +367,8 @@
 </template>
 
 <script setup>
-import { ensureFontAwesomeLoaded } from '@/utils/fontawesome'
-ensureFontAwesomeLoaded()
-
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from '@/utils/toast'
 import AccountForm from '@/components/AccountForm.vue'
 import api from '@/api'
 
@@ -408,6 +377,11 @@ const accounts = ref([])
 const selectedAccounts = ref([])
 const showFormDialog = ref(false)
 const editingAccount = ref(null)
+
+// 删除相关
+const deleteDialogVisible = ref(false)
+const deleteTarget = ref(null)
+const deleting = ref(false)
 
 // 操作加载状态
 const healthCheckingIds = ref([])
@@ -431,21 +405,18 @@ const platformGroups = [
   {
     key: 'claude',
     name: 'Claude',
-    icon: 'fa-solid fa-brain',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     types: ['claude-official', 'claude-console', 'bedrock']
   },
   {
     key: 'openai',
     name: 'OpenAI',
-    icon: 'fa-solid fa-robot',
     gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
     types: ['openai', 'openai-responses', 'azure-openai']
   },
   {
     key: 'gemini',
     name: 'Gemini',
-    icon: 'fa-brands fa-google',
     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     types: ['gemini']
   }
@@ -453,13 +424,13 @@ const platformGroups = [
 
 // 子类型定义
 const subtypeMap = {
-  'claude-official': { label: 'Claude Official', icon: 'fa-solid fa-key', color: '#667eea', platform: 'Claude' },
-  'claude-console': { label: 'Claude Console', icon: 'fa-solid fa-terminal', color: '#764ba2', platform: 'Claude' },
-  'bedrock': { label: 'AWS Bedrock', icon: 'fa-brands fa-aws', color: '#ff9900', platform: 'Claude' },
-  'openai': { label: 'OpenAI 三方 API', icon: 'fa-solid fa-bolt', color: '#11998e', platform: 'OpenAI' },
-  'openai-responses': { label: 'ChatGPT 官方', icon: 'fa-solid fa-comments', color: '#38ef7d', platform: 'OpenAI' },
-  'azure-openai': { label: 'Azure OpenAI', icon: 'fa-brands fa-microsoft', color: '#0078d4', platform: 'OpenAI' },
-  'gemini': { label: 'Gemini', icon: 'fa-brands fa-google', color: '#4facfe', platform: 'Gemini' }
+  'claude-official': { label: 'Claude Official', color: '#667eea', platform: 'Claude' },
+  'claude-console': { label: 'Claude Console', color: '#764ba2', platform: 'Claude' },
+  'bedrock': { label: 'AWS Bedrock', color: '#ff9900', platform: 'Claude' },
+  'openai': { label: 'OpenAI API', color: '#11998e', platform: 'OpenAI' },
+  'openai-responses': { label: 'ChatGPT', color: '#38ef7d', platform: 'OpenAI' },
+  'azure-openai': { label: 'Azure OpenAI', color: '#0078d4', platform: 'OpenAI' },
+  'gemini': { label: 'Gemini', color: '#4facfe', platform: 'Gemini' }
 }
 
 // 平台统计
@@ -474,105 +445,57 @@ const platformStats = computed(() => {
   })
 })
 
-// 获取类型相关方法
+function isSelected(id) {
+  return selectedAccounts.value.includes(id)
+}
+
+function toggleSelect(id) {
+  const index = selectedAccounts.value.indexOf(id)
+  if (index >= 0) {
+    selectedAccounts.value.splice(index, 1)
+  } else {
+    selectedAccounts.value.push(id)
+  }
+}
+
+function toggleSelectAll() {
+  if (selectedAccounts.value.length === accounts.value.length) {
+    selectedAccounts.value = []
+  } else {
+    selectedAccounts.value = accounts.value.map(a => a.id)
+  }
+}
+
 function getTypeLabel(type, row = null) {
   const baseLabel = subtypeMap[type]?.label || type
-
   if (!row) return baseLabel
 
-  // 对 claude-official 类型显示更详细的认证方式
   if (type === 'claude-official') {
-    const hasToken = row.access_token
-    const hasSessionKey = row.session_key
-    if (hasToken && hasSessionKey) {
-      return 'OAuth + SK'
-    } else if (hasToken) {
-      return 'OAuth'
-    } else if (hasSessionKey) {
-      return 'SessionKey'
-    } else if (row.api_key) {
-      return 'API Key'
-    }
+    if (row.access_token && row.session_key) return 'OAuth + SK'
+    if (row.access_token) return 'OAuth'
+    if (row.session_key) return 'SessionKey'
+    if (row.api_key) return 'API Key'
     return 'Claude Official'
   }
 
-  // OpenAI 三方 API
   if (type === 'openai') {
     if (row.base_url) {
-      // 尝试从 base_url 提取服务商名称
       try {
         const url = new URL(row.base_url)
         const host = url.hostname.replace('www.', '')
-        // 常见的第三方服务
         if (host.includes('openrouter')) return 'OpenRouter'
         if (host.includes('together')) return 'Together AI'
         if (host.includes('groq')) return 'Groq'
         if (host.includes('deepseek')) return 'DeepSeek'
-        if (host.includes('moonshot') || host.includes('kimi')) return 'Moonshot'
-        if (host.includes('zhipu') || host.includes('bigmodel')) return 'ZhipuAI'
-        if (host.includes('baichuan')) return 'Baichuan'
-        if (host.includes('minimax')) return 'MiniMax'
-        if (host.includes('yi.') || host.includes('lingyiwanwu')) return '零一万物'
-        if (host.includes('siliconflow')) return 'SiliconFlow'
-        // 返回简短域名
         return host.split('.')[0]
       } catch {
         return '三方 API'
       }
     }
-    return row.api_key ? 'API Key' : 'OpenAI'
-  }
-
-  // ChatGPT 官方 (openai-responses)
-  if (type === 'openai-responses') {
-    if (row.access_token && row.refresh_token) {
-      return 'ChatGPT OAuth'
-    } else if (row.access_token) {
-      return 'ChatGPT Token'
-    }
-    return 'ChatGPT'
-  }
-
-  // Azure OpenAI
-  if (type === 'azure-openai') {
-    if (row.azure_endpoint) {
-      try {
-        const url = new URL(row.azure_endpoint)
-        // 提取资源名称，如 xxx.openai.azure.com -> xxx
-        const parts = url.hostname.split('.')
-        if (parts.length > 0) {
-          return `Azure: ${parts[0]}`
-        }
-      } catch {}
-    }
-    return 'Azure OpenAI'
-  }
-
-  // Gemini
-  if (type === 'gemini') {
-    if (row.access_token) {
-      return 'Gemini OAuth'
-    }
-    return 'Gemini'
-  }
-
-  if (type === 'gemini-api') {
-    return 'Gemini API'
-  }
-
-  // Bedrock
-  if (type === 'bedrock') {
-    if (row.aws_region) {
-      return `Bedrock: ${row.aws_region}`
-    }
-    return 'AWS Bedrock'
+    return 'OpenAI'
   }
 
   return baseLabel
-}
-
-function getTypeIcon(type) {
-  return subtypeMap[type]?.icon || 'fa-solid fa-circle'
 }
 
 function getTypeColor(type) {
@@ -581,14 +504,6 @@ function getTypeColor(type) {
 
 function getPlatformLabel(type) {
   return subtypeMap[type]?.platform || 'Unknown'
-}
-
-function getPlatformIcon(type) {
-  const platform = subtypeMap[type]?.platform
-  if (platform === 'Claude') return 'fa-solid fa-brain'
-  if (platform === 'OpenAI') return 'fa-solid fa-robot'
-  if (platform === 'Gemini') return 'fa-brands fa-google'
-  return 'fa-solid fa-circle'
 }
 
 function getPlatformClass(type) {
@@ -614,30 +529,16 @@ function getStatusLabel(status) {
   return map[status] || status
 }
 
-function getUsageStatusLabel(status) {
-  const map = {
-    allowed: '5H正常',
-    allowed_warning: '5H接近限额',
-    rejected: '5H已限流'
-  }
-  return map[status] || status
-}
-
-// 判断是否有用量数据
 function hasUsageData(row) {
-  return row.five_hour_utilization !== null && row.five_hour_utilization !== undefined ||
-         row.seven_day_utilization !== null && row.seven_day_utilization !== undefined ||
-         row.seven_day_sonnet_utilization !== null && row.seven_day_sonnet_utilization !== undefined
+  return row.five_hour_utilization != null || row.seven_day_utilization != null
 }
 
-// 根据用量百分比获取进度条颜色类
 function getUsageBarClass(utilization) {
   if (utilization >= 90) return 'danger'
   if (utilization >= 70) return 'warning'
   return 'normal'
 }
 
-// 获取并发状态颜色类
 function getConcurrencyClass(row) {
   const current = row.current_concurrency || 0
   const max = row.max_concurrency || 5
@@ -672,69 +573,43 @@ function formatRelativeTime(dateStr) {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   const now = new Date()
-  const diff = Math.floor((now - date) / 1000) // 秒数差
+  const diff = Math.floor((now - date) / 1000)
 
   if (diff < 60) return '刚刚'
   if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前'
   if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前'
   if (diff < 604800) return Math.floor(diff / 86400) + ' 天前'
-
-  // 超过7天显示具体日期
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
-// 格式化限流恢复时间（显示倒计时）
 function formatResetTime(dateStr) {
   if (!dateStr) return ''
   const resetTime = new Date(dateStr)
   const now = new Date()
-  const diff = Math.floor((resetTime - now) / 1000) // 秒数差
+  const diff = Math.floor((resetTime - now) / 1000)
 
   if (diff <= 0) return '即将恢复'
   if (diff < 60) return diff + ' 秒后恢复'
   if (diff < 3600) return Math.floor(diff / 60) + ' 分钟后恢复'
-  if (diff < 86400) {
-    const hours = Math.floor(diff / 3600)
-    const mins = Math.floor((diff % 3600) / 60)
-    return hours + '时' + mins + '分后恢复'
-  }
-  // 超过1天显示具体时间
-  return resetTime.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' 恢复'
+  const hours = Math.floor(diff / 3600)
+  const mins = Math.floor((diff % 3600) / 60)
+  return hours + '时' + mins + '分后恢复'
 }
 
-// 格式化下次检测时间
-function formatNextCheck(dateStr) {
-  if (!dateStr) return ''
-  const checkTime = new Date(dateStr)
-  const now = new Date()
-  const diff = Math.floor((checkTime - now) / 1000)
-
-  if (diff <= 0) return '待检测'
-  if (diff < 60) return diff + ' 秒后'
-  if (diff < 3600) return Math.floor(diff / 60) + ' 分钟后'
-  return Math.floor(diff / 3600) + ' 小时后'
-}
-
-// 判断是否可以执行健康检测
 function canHealthCheck(row) {
-  // OAuth 类型账号才能检测
   const oauthTypes = ['claude-official', 'openai-responses', 'gemini']
   return oauthTypes.includes(row.type)
 }
 
-// 判断是否可以恢复
 function canRecover(row) {
   const recoverableStatuses = ['invalid', 'rate_limited', 'token_expired', 'suspended', 'banned', 'disabled']
   return recoverableStatuses.includes(row.status)
 }
 
-// 判断是否可以刷新 Token
 function canRefreshToken(row) {
-  // 只有有 session_key 的 claude-official 类型才能刷新
   return row.type === 'claude-official' && row.session_key
 }
 
-// 筛选和搜索
 function filterByPlatform(key) {
   if (filters.platform === key) {
     filters.platform = ''
@@ -759,7 +634,6 @@ onUnmounted(() => {
   }
 })
 
-// 加载账户列表
 async function loadAccounts() {
   loading.value = true
   try {
@@ -770,7 +644,6 @@ async function loadAccounts() {
       search: filters.search
     }
 
-    // 根据平台筛选类型
     if (filters.platform) {
       const group = platformGroups.find(g => g.key === filters.platform)
       if (group) {
@@ -782,18 +655,12 @@ async function loadAccounts() {
     accounts.value = res.data.items || []
     pagination.total = res.data.total || 0
   } catch (e) {
-    console.error('Failed to load accounts:', e)
+    ElMessage.error('加载账户列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// 选择处理
-function handleSelectionChange(selection) {
-  selectedAccounts.value = selection.map(item => item.id)
-}
-
-// 切换启用状态
 async function handleToggleEnabled(row) {
   try {
     await api.updateAccount(row.id, { enabled: row.enabled })
@@ -804,35 +671,32 @@ async function handleToggleEnabled(row) {
   }
 }
 
-// 编辑
 function handleEdit(row) {
   editingAccount.value = { ...row }
   showFormDialog.value = true
 }
 
-// 删除
-async function handleDelete(id) {
+function confirmDelete(account) {
+  deleteTarget.value = account
+  deleteDialogVisible.value = true
+}
+
+async function handleDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
   try {
-    await api.deleteAccount(id)
+    await api.deleteAccount(deleteTarget.value.id)
     ElMessage.success('删除成功')
+    deleteDialogVisible.value = false
+    deleteTarget.value = null
     loadAccounts()
   } catch (e) {
     ElMessage.error('删除失败')
+  } finally {
+    deleting.value = false
   }
 }
 
-// 恢复账户状态为正常
-async function handleResetStatus(row) {
-  try {
-    await api.updateAccountStatus(row.id, { status: 'valid', last_error: '' })
-    ElMessage.success('账户状态已恢复为正常')
-    loadAccounts()
-  } catch (e) {
-    ElMessage.error('恢复失败')
-  }
-}
-
-// 健康检测
 async function handleHealthCheck(row) {
   healthCheckingIds.value.push(row.id)
   try {
@@ -851,7 +715,6 @@ async function handleHealthCheck(row) {
   }
 }
 
-// 强制恢复
 async function handleForceRecover(row) {
   recoveringIds.value.push(row.id)
   try {
@@ -865,7 +728,6 @@ async function handleForceRecover(row) {
   }
 }
 
-// 刷新 Token
 async function handleRefreshToken(row) {
   refreshingIds.value.push(row.id)
   try {
@@ -879,7 +741,6 @@ async function handleRefreshToken(row) {
   }
 }
 
-// 批量删除
 async function handleBatchDelete() {
   if (selectedAccounts.value.length === 0) return
 
@@ -903,17 +764,14 @@ async function handleBatchDelete() {
   }
 }
 
-// 表单成功回调
 function handleFormSuccess() {
   showFormDialog.value = false
   editingAccount.value = null
   loadAccounts()
 }
 
-// 弹窗关闭时清除编辑数据
 function handleDialogClose(val) {
   if (!val) {
-    // 弹窗关闭时，清除编辑数据
     editingAccount.value = null
   }
 }
@@ -925,106 +783,118 @@ onMounted(() => {
 
 <style scoped>
 .accounts-page {
-  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
+/* 页面标题 */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: var(--apple-spacing-xl);
 }
 
-.header-left h2 {
-  margin: 0 0 4px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
+.header-content {
+  flex: 1;
 }
 
-.header-desc {
+.page-title {
+  font-size: var(--apple-text-3xl);
+  font-weight: var(--apple-font-bold);
+  color: var(--apple-text-primary);
+  margin: 0 0 var(--apple-spacing-xs) 0;
+}
+
+.page-subtitle {
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-secondary);
   margin: 0;
-  font-size: 14px;
-  color: #6b7280;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--apple-spacing-sm);
 }
 
 /* 平台统计卡片 */
 .platform-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--apple-spacing-md);
+  margin-bottom: var(--apple-spacing-xl);
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
+  gap: var(--apple-spacing-md);
+  padding: var(--apple-spacing-lg);
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
   border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--apple-shadow-card);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--apple-duration-normal) var(--apple-ease-default);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--apple-shadow-card-hover);
 }
 
 .stat-card.active {
-  border-color: #3b82f6;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%);
+  border-color: var(--apple-blue);
+  background: var(--apple-blue-light);
 }
 
 .stat-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--apple-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 22px;
   flex-shrink: 0;
 }
 
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
 .stat-info h3 {
-  margin: 0 0 6px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
+  margin: 0 0 var(--apple-spacing-xs);
+  font-size: var(--apple-text-md);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
 }
 
 .stat-numbers {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--apple-spacing-md);
 }
 
 .stat-numbers .total {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
 }
 
 .stat-numbers .valid {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #059669;
+  gap: var(--apple-spacing-xxs);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-green);
 }
 
 .valid-dot {
-  font-size: 6px;
-  color: #10b981;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--apple-green);
 }
 
 /* 筛选栏 */
@@ -1032,35 +902,145 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--apple-spacing-lg);
 }
 
 .filter-left {
   display: flex;
-  gap: 12px;
+  gap: var(--apple-spacing-sm);
 }
 
-/* 账户表格 */
-.accounts-table-card {
-  border-radius: 12px;
+.filter-select {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-primary);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
 }
 
-.account-cell {
+.search-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  position: relative;
+  width: 200px;
 }
 
-.account-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+.search-box svg {
+  position: absolute;
+  left: var(--apple-spacing-sm);
+  width: 16px;
+  height: 16px;
+  color: var(--apple-text-tertiary);
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  padding-left: 36px;
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-primary);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  background: var(--apple-blue-light);
+  color: var(--apple-blue);
+  border-radius: var(--apple-radius-full);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
+}
+
+.filter-tag button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.2);
+}
+
+.filter-tag button svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* 表格卡片 */
+.table-card {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-card);
+  overflow: hidden;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--apple-text-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--apple-spacing-sm) var(--apple-spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--apple-separator);
+}
+
+.data-table th {
+  background: var(--apple-bg-secondary);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-secondary);
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: var(--apple-bg-secondary);
+}
+
+.col-checkbox { width: 40px; }
+.col-account { min-width: 200px; }
+.col-center { text-align: center; }
+.col-right { text-align: right; }
+
+.row-index {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-tertiary);
+}
+
+/* 账户单元格 */
+.account-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-sm);
+}
+
+.account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--apple-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.account-avatar svg {
+  width: 18px;
+  height: 18px;
+  color: white;
 }
 
 .account-info {
@@ -1069,23 +1049,24 @@ onMounted(() => {
 }
 
 .account-name {
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
 }
 
 .account-type {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-tertiary);
 }
 
+/* 平台徽章 */
 .platform-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: var(--apple-spacing-xxs);
+  padding: 2px 8px;
+  border-radius: var(--apple-radius-sm);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
 }
 
 .platform-badge.claude {
@@ -1103,242 +1084,73 @@ onMounted(() => {
   color: #3b82f6;
 }
 
+/* 状态单元格 */
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--apple-spacing-xxs);
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.valid {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.status-badge.valid .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10b981;
-}
-
-.status-badge.invalid {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.status-badge.invalid .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ef4444;
-}
-
-.status-badge.rate_limited {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.status-badge.rate_limited .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f59e0b;
-}
-
-.status-badge.token_expired {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.status-badge.token_expired .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f59e0b;
-}
-
-.status-badge.suspended {
-  background: #fed7aa;
-  color: #c2410c;
-}
-
-.status-badge.suspended .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ea580c;
-}
-
-.status-badge.banned {
-  background: #fecaca;
-  color: #991b1b;
-}
-
-.status-badge.banned .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #b91c1c;
-}
-
-.status-badge.disabled {
-  background: #e5e7eb;
-  color: #6b7280;
-}
-
-.status-badge.disabled .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #9ca3af;
-}
-
-.status-badge.overloaded {
-  background: #ddd6fe;
-  color: #7c3aed;
-}
-
-.status-badge.overloaded .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #8b5cf6;
-}
-
-/* 状态详情 */
-.status-detail {
-  font-size: 11px;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status-detail i {
-  font-size: 10px;
-}
-
-.status-detail.next-check {
-  color: #6b7280;
-}
-
-.status-detail.suspended-count {
-  color: #c2410c;
-}
-
-.status-detail.error-hint {
-  color: #6b7280;
-  cursor: pointer;
-}
-
-.status-detail.error-hint:hover {
-  color: #3b82f6;
-}
-
-.rate-limit-reset {
-  font-size: 11px;
-  color: #d97706;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.rate-limit-reset i {
-  font-size: 10px;
-}
-
-.request-count {
-  font-family: 'SF Mono', Monaco, monospace;
-  color: #4b5563;
-}
-
-.total-cost {
-  font-family: 'SF Mono', Monaco, monospace;
-  font-weight: 600;
-  color: #059669;
-}
-
-.no-cost {
-  color: #d1d5db;
-}
-
-.no-proxy {
-  color: #9ca3af;
-}
-
-.today-usage {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.usage-tokens {
-  font-family: 'SF Mono', Monaco, monospace;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-.usage-count {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.last-used {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.no-used {
-  color: #d1d5db;
-}
-
-/* 5H 用量状态徽章 */
-.usage-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  gap: var(--apple-spacing-xxs);
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-  margin-top: 4px;
+  border-radius: var(--apple-radius-full);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
 }
 
-.usage-status-badge.allowed {
-  background: #d1fae5;
-  color: #059669;
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
-.usage-status-badge.allowed_warning {
-  background: #fef3c7;
-  color: #d97706;
-}
+.status-badge.valid { background: var(--apple-green-light); color: var(--apple-green); }
+.status-badge.valid .status-dot { background: var(--apple-green); }
 
-.usage-status-badge.rejected {
-  background: #fee2e2;
-  color: #dc2626;
-}
+.status-badge.invalid { background: var(--apple-red-light); color: var(--apple-red); }
+.status-badge.invalid .status-dot { background: var(--apple-red); }
 
-.usage-status-icon {
+.status-badge.rate_limited { background: var(--apple-orange-light); color: var(--apple-orange); }
+.status-badge.rate_limited .status-dot { background: var(--apple-orange); }
+
+.status-badge.token_expired { background: var(--apple-orange-light); color: #b45309; }
+.status-badge.token_expired .status-dot { background: #f59e0b; }
+
+.status-badge.suspended { background: #fed7aa; color: #c2410c; }
+.status-badge.suspended .status-dot { background: #ea580c; }
+
+.status-badge.banned { background: #fecaca; color: #991b1b; }
+.status-badge.banned .status-dot { background: #b91c1c; }
+
+.status-badge.disabled { background: var(--apple-fill-tertiary); color: var(--apple-text-tertiary); }
+.status-badge.disabled .status-dot { background: var(--apple-text-tertiary); }
+
+.status-detail {
   display: flex;
   align-items: center;
-}
-
-.usage-status-icon i {
+  gap: var(--apple-spacing-xxs);
   font-size: 10px;
+  color: var(--apple-text-tertiary);
 }
 
-/* 用量进度条样式 */
+.status-detail svg {
+  width: 10px;
+  height: 10px;
+}
+
+.status-detail.warning {
+  color: #c2410c;
+}
+
+/* 用量进度条 */
 .usage-bars {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--apple-spacing-xs);
+  min-width: 120px;
 }
 
 .usage-bar-item {
@@ -1350,149 +1162,479 @@ onMounted(() => {
 .usage-bar-label {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  line-height: 1;
+  font-size: 10px;
 }
 
 .usage-bar-label .label-text {
-  color: #6b7280;
-  font-weight: 500;
+  color: var(--apple-text-tertiary);
 }
 
 .usage-bar-label .label-value {
-  font-family: 'SF Mono', Monaco, monospace;
-  font-weight: 600;
-  color: #374151;
+  font-family: var(--apple-font-mono);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-text-primary);
 }
 
 .usage-bar-track {
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
+  height: 4px;
+  background: var(--apple-fill-tertiary);
+  border-radius: var(--apple-radius-full);
   overflow: hidden;
 }
 
 .usage-bar-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  border-radius: var(--apple-radius-full);
+  transition: width var(--apple-duration-normal);
 }
 
-.usage-bar-fill.normal {
-  background: linear-gradient(90deg, #10b981, #34d399);
-}
+.usage-bar-fill.normal { background: var(--apple-green); }
+.usage-bar-fill.warning { background: var(--apple-orange); }
+.usage-bar-fill.danger { background: var(--apple-red); }
 
-.usage-bar-fill.warning {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-}
-
-.usage-bar-fill.danger {
-  background: linear-gradient(90deg, #ef4444, #f87171);
-}
-
-.no-usage {
-  color: #d1d5db;
-}
-
-/* OpenAI/其他类型用量统计 */
 .usage-stats {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
-.usage-stat-item {
+.usage-stat {
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-secondary);
+}
+
+.no-data {
+  color: var(--apple-text-quaternary);
+}
+
+/* 开关样式 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--apple-fill-tertiary);
+  transition: 0.3s;
+  border-radius: 20px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--apple-green);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(16px);
+}
+
+/* 徽章 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--apple-radius-full);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-medium);
+}
+
+.badge-info {
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-secondary);
+}
+
+.concurrency-badge {
+  font-family: var(--apple-font-mono);
+  font-size: var(--apple-text-xs);
+  font-weight: var(--apple-font-semibold);
+}
+
+.concurrency-badge.normal { color: var(--apple-green); }
+.concurrency-badge.warning { color: var(--apple-orange); }
+.concurrency-badge.danger { color: var(--apple-red); }
+
+.mono {
+  font-family: var(--apple-font-mono);
+  color: var(--apple-text-secondary);
+}
+
+.cost {
+  font-family: var(--apple-font-mono);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-green);
+}
+
+.time-ago {
+  font-size: var(--apple-text-xs);
+  color: var(--apple-text-tertiary);
+}
+
+/* 操作按钮 */
+.action-group {
+  display: flex;
+  gap: var(--apple-spacing-xxs);
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--apple-radius-xs);
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #374151;
+  justify-content: center;
+  background: var(--apple-fill-quaternary);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
 }
 
-.usage-stat-item i {
+.action-btn svg {
   width: 14px;
-  color: #9ca3af;
-  font-size: 11px;
+  height: 14px;
 }
 
-.usage-stat-item span {
-  font-family: 'SF Mono', Monaco, monospace;
-  font-weight: 500;
+.action-btn:hover { background: var(--apple-blue); color: white; }
+.action-btn.info:hover { background: var(--apple-teal); }
+.action-btn.success:hover { background: var(--apple-green); }
+.action-btn.warning:hover { background: var(--apple-orange); }
+.action-btn.danger:hover { background: var(--apple-red); }
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.usage-stat-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 4px;
-}
-
-.usage-stat-row .stat-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.usage-stat-row .stat-label i {
-  font-size: 10px;
-  color: #9ca3af;
-}
-
+/* 表格底部 */
 .table-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+  padding: var(--apple-spacing-md) var(--apple-spacing-lg);
+  border-top: 1px solid var(--apple-separator);
 }
 
 .selection-info {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #6b7280;
-  font-size: 14px;
+  gap: var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
 }
 
-.row-index {
-  font-family: 'SF Mono', Monaco, monospace;
-  font-size: 13px;
-  color: #9ca3af;
+.link-btn {
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  color: var(--apple-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
-/* 并发列样式 */
-.concurrency-cell {
+.link-btn.danger {
+  color: var(--apple-red);
+}
+
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-md);
+}
+
+.pagination-info {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-secondary);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-sm);
+}
+
+.page-size-select {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+  background: var(--apple-bg-primary);
+}
+
+.page-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-xs);
+}
+
+.page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--apple-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-family: 'SF Mono', Monaco, monospace;
-  font-size: 13px;
+  background: var(--apple-fill-quaternary);
+  color: var(--apple-text-secondary);
+  transition: all var(--apple-duration-fast);
 }
 
-.concurrency-current {
-  font-weight: 600;
+.page-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-.concurrency-current.normal {
-  color: #059669;
+.page-btn:hover:not(:disabled) {
+  background: var(--apple-blue);
+  color: white;
 }
 
-.concurrency-current.warning {
-  color: #d97706;
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-.concurrency-current.danger {
-  color: #dc2626;
+.page-current {
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  min-width: 60px;
+  text-align: center;
 }
 
-.concurrency-separator {
-  color: #9ca3af;
+/* 加载和空状态 */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--apple-spacing-xxxl);
+  color: var(--apple-text-tertiary);
 }
 
-.concurrency-max {
-  color: #6b7280;
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--apple-fill-tertiary);
+  border-top-color: var(--apple-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--apple-spacing-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--apple-spacing-md);
+  opacity: 0.5;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--apple-spacing-xs);
+  padding: var(--apple-spacing-sm) var(--apple-spacing-lg);
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  cursor: pointer;
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--apple-blue);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--apple-blue-hover);
+}
+
+.btn-secondary {
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--apple-fill-secondary);
+}
+
+.btn-danger {
+  background: var(--apple-red);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #e6362d;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--apple-blue);
+  border: 1px solid var(--apple-blue);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--apple-blue-light);
+}
+
+.btn-loading {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--apple-z-modal);
+  padding: var(--apple-spacing-xl);
+}
+
+.modal {
+  background: var(--apple-bg-primary);
+  border-radius: var(--apple-radius-xl);
+  box-shadow: var(--apple-shadow-modal);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.modal-sm { max-width: 400px; }
+
+.modal-header {
+  padding: var(--apple-spacing-xl);
+  border-bottom: 1px solid var(--apple-separator);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header.danger {
+  flex-direction: column;
+  text-align: center;
+  gap: var(--apple-spacing-md);
+}
+
+.danger-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--apple-red-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.danger-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--apple-red);
+}
+
+.modal-header h2 {
+  font-size: var(--apple-text-lg);
+  font-weight: var(--apple-font-semibold);
+  color: var(--apple-text-primary);
+  margin: 0;
+}
+
+.modal-body {
+  padding: var(--apple-spacing-xl);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: var(--apple-spacing-lg) var(--apple-spacing-xl);
+  border-top: 1px solid var(--apple-separator);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--apple-spacing-sm);
+}
+
+.delete-message {
+  font-size: var(--apple-text-base);
+  color: var(--apple-text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .page-header {
+    flex-direction: column;
+    gap: var(--apple-spacing-lg);
+  }
+
+  .platform-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--apple-spacing-sm);
+  }
+
+  .filter-left {
+    flex-wrap: wrap;
+  }
 }
 </style>

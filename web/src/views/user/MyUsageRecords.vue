@@ -133,9 +133,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/toast'
 import api from '@/api'
-import { Search } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const records = ref([])
