@@ -54,7 +54,7 @@ func InitDefaultAdmin() error {
 
 	admin := &model.User{
 		Username: "admin",
-		Email:    "admin@aiproxy.local",
+		Email:    "admin@cli-proxy.local",
 		Role:     "admin",
 		Status:   "active",
 	}

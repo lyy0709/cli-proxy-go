@@ -18,10 +18,10 @@
 
 ```bash
 # 编译
-go build -o aiproxy ./cmd/server
+go build -o cli-proxy ./cmd/server
 
 # 运行
-./aiproxy
+./server
 ```
 
 服务默认监听 `8080` 端口。
@@ -60,9 +60,9 @@ docker-compose down -v
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
 | `MYSQL_ROOT_PASSWORD` | `cli-proxy-root` | MySQL root 密码 |
-| `MYSQL_DATABASE` | `aiproxy` | 数据库名 |
-| `MYSQL_USER` | `aiproxy` | MySQL 用户名 |
-| `MYSQL_PASSWORD` | `aiproxy-password` | MySQL 密码 |
+| `MYSQL_DATABASE` | `cli-proxy` | 数据库名 |
+| `MYSQL_USER` | `cli-proxy` | MySQL 用户名 |
+| `MYSQL_PASSWORD` | `cli-proxy-password` | MySQL 密码 |
 | `PORT` | `8080` | 应用端口 |
 | `JWT_SECRET` | `cli-proxy-jwt-secret-change-in-production` | JWT 密钥（生产环境请修改） |
 
@@ -186,7 +186,7 @@ cli-proxy/
 | `DB_PORT` | `3306` | MySQL 端口 |
 | `DB_USER` | `root` | MySQL 用户名 |
 | `DB_PASSWORD` | - | MySQL 密码 |
-| `DB_NAME` | `aiproxy` | 数据库名 |
+| `DB_NAME` | `cli-proxy` | 数据库名 |
 
 ## 前端开发
 

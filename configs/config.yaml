@@ -6,9 +6,9 @@ server:
 mysql:
   host: mysql
   port: 3306
-  user: aiproxy
-  password: aiproxy-password
-  database: aiproxy
+  user: cli-proxy
+  password: cli-proxy-password
+  database: cli-proxy
   charset: utf8mb4
   max_idle_conns: 10
   max_open_conns: 100
