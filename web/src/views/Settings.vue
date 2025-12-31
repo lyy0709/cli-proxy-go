@@ -452,7 +452,7 @@
           <div class="setting-item">
             <div class="setting-info">
               <span class="setting-label">SMTP 端口</span>
-              <span class="setting-desc">通常为 587（TLS）或 465（SSL）</span>
+              <span class="setting-desc">587（STARTTLS）或 465（SSL），465 端口自动使用 SSL 加密</span>
             </div>
             <div class="input-with-unit">
               <input type="number" v-model.number="configs.smtp_port" min="1" max="65535" class="form-input" @change="markDirty" />
@@ -493,28 +493,29 @@
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">使用 TLS 加密</span>
-              <span class="setting-desc">大多数邮件服务器需要启用</span>
+              <span class="setting-label">加密方式</span>
+              <span class="setting-desc">465 端口用 SSL，587 端口用 STARTTLS</span>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" v-model="smtpUseTLS" @change="markDirty" />
-              <span class="toggle-slider"></span>
-            </label>
+            <select v-model="configs.smtp_encryption" class="form-select" @change="markDirty">
+              <option value="none">无加密</option>
+              <option value="ssl">SSL (端口 465)</option>
+              <option value="starttls">STARTTLS (端口 587)</option>
+            </select>
           </div>
 
           <div class="setting-divider"></div>
 
-          <div class="setting-item">
+          <div class="setting-item full-width">
             <div class="setting-info">
               <span class="setting-label">测试邮件发送</span>
               <span class="setting-desc">保存配置后，发送测试邮件验证配置是否正确</span>
             </div>
-            <div class="test-email-row">
-              <input type="email" v-model="testEmailAddress" class="form-input test-email-input" placeholder="测试邮箱地址" />
-              <button class="btn btn-secondary" @click="sendTestEmail" :disabled="testEmailSending || !testEmailAddress">
-                {{ testEmailSending ? '发送中...' : '发送测试' }}
-              </button>
-            </div>
+          </div>
+          <div class="test-email-row">
+            <input type="email" v-model="testEmailAddress" class="form-input test-email-input" placeholder="测试邮箱地址" />
+            <button class="btn btn-secondary" @click="sendTestEmail" :disabled="testEmailSending || !testEmailAddress">
+              {{ testEmailSending ? '发送中...' : '发送测试' }}
+            </button>
           </div>
         </div>
       </div>
@@ -668,7 +669,7 @@ const configs = reactive({
   smtp_password: '',
   smtp_from_email: '',
   smtp_from_name: 'Cli-Proxy',
-  smtp_use_tls: 'true'
+  smtp_encryption: 'starttls'
 })
 
 // 邮件测试
@@ -725,11 +726,6 @@ const bannedProbeEnabled = computed({
 const emailVerificationEnabled = computed({
   get: () => configs.email_verification_enabled === 'true',
   set: (val) => { configs.email_verification_enabled = val ? 'true' : 'false' }
-})
-
-const smtpUseTLS = computed({
-  get: () => configs.smtp_use_tls === 'true',
-  set: (val) => { configs.smtp_use_tls = val ? 'true' : 'false' }
 })
 
 async function sendTestEmail() {
@@ -803,7 +799,19 @@ async function saveConfigs() {
       banned_probe_enabled: configs.banned_probe_enabled,
       banned_probe_interval: String(configs.banned_probe_interval),
       token_refresh_cooldown: String(configs.token_refresh_cooldown),
-      token_refresh_max_retries: String(configs.token_refresh_max_retries)
+      token_refresh_max_retries: String(configs.token_refresh_max_retries),
+      // 邮件配置
+      email_verification_enabled: configs.email_verification_enabled,
+      email_code_expire_minutes: String(configs.email_code_expire_minutes),
+      email_send_interval: String(configs.email_send_interval),
+      email_daily_limit: String(configs.email_daily_limit),
+      smtp_host: configs.smtp_host,
+      smtp_port: String(configs.smtp_port),
+      smtp_username: configs.smtp_username,
+      smtp_password: configs.smtp_password,
+      smtp_from_email: configs.smtp_from_email,
+      smtp_from_name: configs.smtp_from_name,
+      smtp_encryption: configs.smtp_encryption
     }
     await api.updateSystemConfigs(toSave)
     ElMessage.success('配置保存成功')
@@ -999,6 +1007,20 @@ onMounted(() => {
   margin: var(--apple-spacing-lg) 0 var(--apple-spacing-sm) 0;
   padding-top: var(--apple-spacing-md);
   border-top: 1px solid var(--apple-separator);
+}
+
+/* 第一个 section title 不需要上边框 */
+.card-body > .setting-section-title:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* 全宽设置项 */
+.setting-item.full-width {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--apple-spacing-xs);
 }
 
 /* 输入框带单位 */
@@ -1246,6 +1268,25 @@ onMounted(() => {
 .form-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 下拉选择框 */
+.form-select {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  font-size: var(--apple-text-sm);
+  color: var(--apple-text-primary);
+  background: var(--apple-bg-primary);
+  border: 1px solid var(--apple-separator-opaque);
+  border-radius: var(--apple-radius-sm);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px var(--apple-blue-light);
 }
 
 /* 模态框 */

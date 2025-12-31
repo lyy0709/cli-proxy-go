@@ -87,9 +87,20 @@ func (s *EmailService) sendHTML(to, subject, body string) error {
 
 	d := gomail.NewDialer(host, port, username, password)
 
-	// 根据配置决定是否使用 TLS
-	useTLS := s.configSvc.GetBool(model.ConfigSMTPUseTLS)
-	if !useTLS {
+	// 根据加密方式配置决定
+	// ssl: 使用隐式 SSL/TLS（端口 465）
+	// starttls: 使用 STARTTLS（端口 587，gomail 默认）
+	// none: 不使用加密
+	encryption := s.configSvc.GetString(model.ConfigSMTPEncryption)
+	switch encryption {
+	case "ssl":
+		d.SSL = true
+	case "starttls":
+		d.SSL = false // gomail 默认使用 STARTTLS
+	case "none":
+		d.SSL = false
+	default:
+		// 默认使用 STARTTLS
 		d.SSL = false
 	}
 

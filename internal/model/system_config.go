@@ -91,13 +91,13 @@ const (
 	ConfigEmailDailyLimit          = "email_daily_limit"          // 每邮箱每日发送上限
 
 	// SMTP 配置
-	ConfigSMTPHost      = "smtp_host"       // SMTP 服务器地址
-	ConfigSMTPPort      = "smtp_port"       // SMTP 端口
-	ConfigSMTPUsername  = "smtp_username"   // SMTP 用户名
-	ConfigSMTPPassword  = "smtp_password"   // SMTP 密码
-	ConfigSMTPFromEmail = "smtp_from_email" // 发件人邮箱
-	ConfigSMTPFromName  = "smtp_from_name"  // 发件人名称
-	ConfigSMTPUseTLS    = "smtp_use_tls"    // 是否使用 TLS
+	ConfigSMTPHost       = "smtp_host"       // SMTP 服务器地址
+	ConfigSMTPPort       = "smtp_port"       // SMTP 端口
+	ConfigSMTPUsername   = "smtp_username"   // SMTP 用户名
+	ConfigSMTPPassword   = "smtp_password"   // SMTP 密码
+	ConfigSMTPFromEmail  = "smtp_from_email" // 发件人邮箱
+	ConfigSMTPFromName   = "smtp_from_name"  // 发件人名称
+	ConfigSMTPEncryption = "smtp_encryption" // 加密方式: none, ssl, starttls
 )
 
 // 默认配置
@@ -152,5 +152,5 @@ var DefaultConfigs = []SystemConfig{
 	{Key: ConfigSMTPPassword, Value: "", Type: "string", Desc: "SMTP 密码", Category: "email"},
 	{Key: ConfigSMTPFromEmail, Value: "", Type: "string", Desc: "发件人邮箱地址", Category: "email"},
 	{Key: ConfigSMTPFromName, Value: "Cli-Proxy", Type: "string", Desc: "发件人名称", Category: "email"},
-	{Key: ConfigSMTPUseTLS, Value: "true", Type: "bool", Desc: "是否使用 TLS 加密", Category: "email"},
+	{Key: ConfigSMTPEncryption, Value: "starttls", Type: "string", Desc: "加密方式: none(无), ssl(SSL/465端口), starttls(STARTTLS/587端口)", Category: "email"},
 }
