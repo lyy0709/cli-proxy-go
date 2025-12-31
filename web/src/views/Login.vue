@@ -425,20 +425,21 @@ onMounted(() => {
 .captcha-image-wrapper {
   width: 120px;
   height: 44px;
-  border-radius: var(--apple-radius-md);
-  overflow: hidden;
+  border-radius: var(--apple-radius-sm);
   cursor: pointer;
   background: var(--apple-fill-quaternary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid var(--apple-separator);
 }
 
 .captcha-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  border-radius: var(--apple-radius-xs);
 }
 
 .captcha-placeholder {

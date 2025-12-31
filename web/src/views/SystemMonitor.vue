@@ -493,6 +493,9 @@ onMounted(() => {
   font-weight: bold;
   color: #303133;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-label {
@@ -555,6 +558,44 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   text-align: center;
+  white-space: nowrap;
+}
+
+/* 进度条样式修复 */
+.section-row :deep(.el-progress) {
+  width: 100%;
+}
+
+.section-row :deep(.el-progress__text) {
+  min-width: 50px;
+  font-size: 14px !important;
+  font-weight: 600;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+  .stat-row .el-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-row .el-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .section-row .el-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
 }
 
 .update-time {

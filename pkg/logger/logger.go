@@ -1,22 +1,26 @@
 /*
  * 文件作用：日志系统封装，基于zap提供模块化日志功能
  * 负责功能：
- *   - 多模块日志支持
+ *   - 多模块日志分离（每个模块独立日志文件）
+ *   - 日志轮转（按大小/日期自动切割）
  *   - 结构化日志（JSON格式）
  *   - Context日志追踪（request_id）
- *   - 输出到 stdout（Docker 友好）
+ *   - 同时输出到 stdout 和文件（Docker + Web UI 查看）
  * 重要程度：⭐⭐⭐⭐ 重要（日志核心工具）
- * 依赖模块：zap
+ * 依赖模块：zap, lumberjack
  */
 package logger
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // 日志级别常量（保持向后兼容）
@@ -44,11 +48,17 @@ var (
 	defaultLogger *Logger
 	loggers       = make(map[string]*Logger)
 	mu            sync.RWMutex
+	logDir        string
 	globalLevel   zap.AtomicLevel
 )
 
-// Init 初始化日志系统（dir 参数保留兼容，但不再使用）
+// Init 初始化日志系统
 func Init(dir string, level int) error {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("创建日志目录失败: %w", err)
+	}
+
+	logDir = dir
 	globalLevel = zap.NewAtomicLevelAt(intToZapLevel(level))
 
 	var err error
@@ -60,10 +70,37 @@ func Init(dir string, level int) error {
 	return nil
 }
 
-// newLogger 创建新的日志器（输出到 stdout）
+// newLogger 创建新的日志器（同时输出到 stdout 和文件）
 func newLogger(module string) (*Logger, error) {
-	// 编码器配置 - 控制台友好格式
-	encoderConfig := zapcore.EncoderConfig{
+	// 使用 lumberjack 做日志轮转
+	filename := filepath.Join(logDir, fmt.Sprintf("%s.log", module))
+	fileWriter := &lumberjack.Logger{
+		Filename:   filename,
+		MaxSize:    100, // MB
+		MaxBackups: 30,  // 保留30个备份
+		MaxAge:     90,  // 保留90天
+		Compress:   true,
+		LocalTime:  true,
+	}
+
+	// 文件编码器配置 - JSON格式（便于前端解析）
+	fileEncoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "timestamp",
+		LevelKey:       "level",
+		NameKey:        "module",
+		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.MillisDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	// 控制台编码器配置 - 彩色输出（便于 Docker logs 查看）
+	consoleEncoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "ts",
 		LevelKey:       "level",
 		NameKey:        "module",
@@ -78,11 +115,20 @@ func newLogger(module string) (*Logger, error) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// 创建 core - 输出到 stdout
-	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.AddSync(os.Stdout),
-		globalLevel,
+	// 创建多输出 core（文件 + stdout）
+	core := zapcore.NewTee(
+		// 文件输出 - JSON格式
+		zapcore.NewCore(
+			zapcore.NewJSONEncoder(fileEncoderConfig),
+			zapcore.AddSync(fileWriter),
+			globalLevel,
+		),
+		// 控制台输出 - 彩色格式
+		zapcore.NewCore(
+			zapcore.NewConsoleEncoder(consoleEncoderConfig),
+			zapcore.AddSync(os.Stdout),
+			globalLevel,
+		),
 	)
 
 	// 创建 logger
