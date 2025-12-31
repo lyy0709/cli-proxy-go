@@ -11,11 +11,11 @@
 package middleware
 
 import (
-	"go-aiproxy/internal/cache"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/cache"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

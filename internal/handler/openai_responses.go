@@ -23,13 +23,13 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/proxy/adapter"
-	"go-aiproxy/internal/proxy/scheduler"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/logger"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/proxy/adapter"
+	"cli-proxy/internal/proxy/scheduler"
+	"cli-proxy/internal/repository"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/logger"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

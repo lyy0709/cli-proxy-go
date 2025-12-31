@@ -14,9 +14,9 @@ import (
 	"strings"
 	"sync"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 )
 
 // ErrorRuleMatcher 错误规则匹配器（带缓存）

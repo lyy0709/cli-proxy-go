@@ -12,8 +12,8 @@ package handler
 import (
 	"net/http"
 
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

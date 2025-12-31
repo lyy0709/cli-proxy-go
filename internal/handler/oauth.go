@@ -27,8 +27,8 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	utls "github.com/refraction-networking/utls"
@@ -38,10 +38,10 @@ import (
 // OAuth 配置常量 - 使用与 clove 项目相同的配置
 const (
 	// Claude OAuth 配置
-	ClaudeAIURL       = "https://claude.ai"
-	OAuthClientID     = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
-	OAuthRedirectURI  = "https://console.anthropic.com/oauth/code/callback"
-	OAuthTokenURL     = "https://console.anthropic.com/v1/oauth/token"
+	ClaudeAIURL      = "https://claude.ai"
+	OAuthClientID    = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+	OAuthRedirectURI = "https://console.anthropic.com/oauth/code/callback"
+	OAuthTokenURL    = "https://console.anthropic.com/v1/oauth/token"
 	// OAuth 授权端点 URL: /v1/oauth/{organization_uuid}/authorize
 	OAuthAuthorizeURL = "https://claude.ai/v1/oauth/%s/authorize"
 
@@ -70,7 +70,7 @@ type OAuthSession struct {
 
 // ProxyConfig 代理配置
 type ProxyConfig struct {
-	Type     string `json:"type"`     // socks5, http, https
+	Type     string `json:"type"` // socks5, http, https
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
 	Username string `json:"username,omitempty"`

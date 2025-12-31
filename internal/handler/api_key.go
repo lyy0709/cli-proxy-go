@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"strings"
 
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/logger"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/logger"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

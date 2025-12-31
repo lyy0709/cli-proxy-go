@@ -24,13 +24,13 @@ import (
 	"syscall"
 	"time"
 
-	"go-aiproxy/internal/config"
-	"go-aiproxy/internal/handler"
-	"go-aiproxy/internal/middleware"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/config"
+	"cli-proxy/internal/handler"
+	"cli-proxy/internal/middleware"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/logger"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -77,7 +77,7 @@ func main() {
 	log := logger.GetLogger("main")
 
 	// 打印启动横幅和系统信息
-	log.Info("Go-AIProxy 服务启动 | 系统: %s/%s | CPU: %d核 | Go: %s | PID: %d | 工作目录: %s",
+	log.Info("Cli-Proxy 服务启动 | 系统: %s/%s | CPU: %d核 | Go: %s | PID: %d | 工作目录: %s",
 		runtime.GOOS, runtime.GOARCH, runtime.NumCPU(), runtime.Version(), os.Getpid(), getWorkDir())
 
 	// 配置信息
@@ -194,8 +194,8 @@ func main() {
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           r,
-		ReadTimeout:       0,                // 无读取超时，支持长时间请求
-		WriteTimeout:      0,                // 无写入超时，支持 SSE 流式响应
+		ReadTimeout:       0,                 // 无读取超时，支持长时间请求
+		WriteTimeout:      0,                 // 无写入超时，支持 SSE 流式响应
 		IdleTimeout:       120 * time.Second, // Keep-alive 空闲超时 2 分钟
 		ReadHeaderTimeout: 10 * time.Second,  // 读取请求头超时 10 秒
 		MaxHeaderBytes:    1 << 20,           // 最大请求头 1MB

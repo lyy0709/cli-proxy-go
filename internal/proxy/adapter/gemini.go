@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/pkg/logger"
 )
 
 type GeminiAdapter struct{}
@@ -45,9 +45,9 @@ func (a *GeminiAdapter) SupportedTypes() []string {
 
 // Gemini 请求格式
 type geminiRequest struct {
-	Contents         []geminiContent        `json:"contents"`
-	SystemInstruction *geminiContent        `json:"systemInstruction,omitempty"`
-	GenerationConfig *geminiGenerationConfig `json:"generationConfig,omitempty"`
+	Contents          []geminiContent         `json:"contents"`
+	SystemInstruction *geminiContent          `json:"systemInstruction,omitempty"`
+	GenerationConfig  *geminiGenerationConfig `json:"generationConfig,omitempty"`
 }
 
 type geminiContent struct {
@@ -314,9 +314,9 @@ func (a *GeminiAdapter) SendStream(ctx context.Context, account *model.Account, 
 		// 转换为 OpenAI 流式格式
 		if len(chunk.Candidates) > 0 && len(chunk.Candidates[0].Content.Parts) > 0 {
 			openAIChunk := map[string]interface{}{
-				"id":      "chatcmpl-gemini",
-				"object":  "chat.completion.chunk",
-				"model":   req.Model,
+				"id":     "chatcmpl-gemini",
+				"object": "chat.completion.chunk",
+				"model":  req.Model,
 				"choices": []map[string]interface{}{
 					{
 						"index": 0,

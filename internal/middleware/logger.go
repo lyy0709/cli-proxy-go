@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )

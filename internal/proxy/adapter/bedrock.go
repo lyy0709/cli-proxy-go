@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/pkg/logger"
 )
 
 type BedrockAdapter struct{}
@@ -64,10 +64,10 @@ type bedrockMessage struct {
 
 // Bedrock Claude 响应格式
 type bedrockResponse struct {
-	ID           string `json:"id"`
-	Type         string `json:"type"`
-	Role         string `json:"role"`
-	Content      []struct {
+	ID      string `json:"id"`
+	Type    string `json:"type"`
+	Role    string `json:"role"`
+	Content []struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"content"`
@@ -262,9 +262,9 @@ func (a *BedrockAdapter) SendStream(ctx context.Context, account *model.Account,
 		case "content_block_delta":
 			if event.Delta != nil && event.Delta.Text != "" {
 				openAIChunk := map[string]interface{}{
-					"id":      "chatcmpl-bedrock",
-					"object":  "chat.completion.chunk",
-					"model":   req.Model,
+					"id":     "chatcmpl-bedrock",
+					"object": "chat.completion.chunk",
+					"model":  req.Model,
 					"choices": []map[string]interface{}{
 						{
 							"index": 0,
@@ -281,9 +281,9 @@ func (a *BedrockAdapter) SendStream(ctx context.Context, account *model.Account,
 		case "message_delta":
 			if event.Delta != nil && event.Delta.StopReason != "" {
 				openAIChunk := map[string]interface{}{
-					"id":      "chatcmpl-bedrock",
-					"object":  "chat.completion.chunk",
-					"model":   req.Model,
+					"id":     "chatcmpl-bedrock",
+					"object": "chat.completion.chunk",
+					"model":  req.Model,
 					"choices": []map[string]interface{}{
 						{
 							"index":         0,

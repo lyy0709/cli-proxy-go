@@ -25,13 +25,13 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/proxy/adapter"
-	"go-aiproxy/internal/proxy/scheduler"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/logger"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/proxy/adapter"
+	"cli-proxy/internal/proxy/scheduler"
+	"cli-proxy/internal/repository"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/logger"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -247,9 +247,9 @@ func (h *ProxyHandler) handleOpenAINonStreamWithRetry(c *gin.Context, req *adapt
 
 	// 构建响应体用于日志记录（使用倍率后的 token）
 	responseBody, _ := json.Marshal(gin.H{
-		"id":      resp.ID,
-		"object":  "chat.completion",
-		"model":   resp.Model,
+		"id":     resp.ID,
+		"object": "chat.completion",
+		"model":  resp.Model,
 		"choices": []gin.H{
 			{
 				"index": 0,
@@ -278,9 +278,9 @@ func (h *ProxyHandler) handleOpenAINonStreamWithRetry(c *gin.Context, req *adapt
 
 	// 返回 OpenAI 格式（使用倍率后的 token）
 	c.JSON(http.StatusOK, gin.H{
-		"id":      resp.ID,
-		"object":  "chat.completion",
-		"model":   resp.Model,
+		"id":     resp.ID,
+		"object": "chat.completion",
+		"model":  resp.Model,
 		"choices": []gin.H{
 			{
 				"index": 0,

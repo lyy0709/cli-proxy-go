@@ -16,17 +16,17 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/cache"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
+	"cli-proxy/internal/cache"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
 )
 
 // CacheService 缓存管理服务（使用内存缓存）
 type CacheService struct {
-	sessionCache   *cache.SessionCache
-	memoryCache    *cache.MemoryCache
-	accountRepo    *repository.AccountRepository
-	userRepo       *repository.UserRepository
+	sessionCache *cache.SessionCache
+	memoryCache  *cache.MemoryCache
+	accountRepo  *repository.AccountRepository
+	userRepo     *repository.UserRepository
 }
 
 var (
@@ -158,13 +158,13 @@ func (s *CacheService) ResetUserConcurrency(ctx context.Context, userID uint) er
 
 // CacheStats 缓存统计信息
 type CacheStats struct {
-	SessionCount      int64  `json:"session_count"`
-	UnavailableCount  int64  `json:"unavailable_count"`
-	UsageKeyCount     int64  `json:"usage_key_count"`    // 不再使用 Redis，保留兼容
-	CostKeyCount      int64  `json:"cost_key_count"`     // 不再使用 Redis，保留兼容
-	TotalKeyCount     int64  `json:"total_key_count"`    // 内存缓存项数
-	MemoryUsed        int64  `json:"memory_used"`        // 不再使用 Redis
-	MemoryUsedHuman   string `json:"memory_used_human"`  // 不再使用 Redis
+	SessionCount     int64  `json:"session_count"`
+	UnavailableCount int64  `json:"unavailable_count"`
+	UsageKeyCount    int64  `json:"usage_key_count"`   // 不再使用 Redis，保留兼容
+	CostKeyCount     int64  `json:"cost_key_count"`    // 不再使用 Redis，保留兼容
+	TotalKeyCount    int64  `json:"total_key_count"`   // 内存缓存项数
+	MemoryUsed       int64  `json:"memory_used"`       // 不再使用 Redis
+	MemoryUsedHuman  string `json:"memory_used_human"` // 不再使用 Redis
 }
 
 // GetCacheStats 获取缓存统计
@@ -197,8 +197,8 @@ const (
 	ClearCacheAll         ClearCacheType = "all"
 	ClearCacheSessions    ClearCacheType = "sessions"
 	ClearCacheUnavailable ClearCacheType = "unavailable"
-	ClearCacheUsage       ClearCacheType = "usage"       // 不再使用，数据在 MySQL
-	ClearCacheCost        ClearCacheType = "cost"        // 不再使用，数据在 MySQL
+	ClearCacheUsage       ClearCacheType = "usage" // 不再使用，数据在 MySQL
+	ClearCacheCost        ClearCacheType = "cost"  // 不再使用，数据在 MySQL
 	ClearCacheConcurrency ClearCacheType = "concurrency"
 )
 
@@ -289,12 +289,12 @@ type AccountCacheInfo struct {
 
 // UserCacheInfo 用户缓存信息（聚合）
 type UserCacheInfo struct {
-	UserID         uint               `json:"user_id"`
-	UserName       string             `json:"user_name"`
-	Concurrency    int64              `json:"concurrency"`
-	MaxConcurrency int                `json:"max_concurrency"`
-	SessionCount   int                `json:"session_count"`
-	Sessions       []SessionBinding   `json:"sessions"`
+	UserID         uint                `json:"user_id"`
+	UserName       string              `json:"user_name"`
+	Concurrency    int64               `json:"concurrency"`
+	MaxConcurrency int                 `json:"max_concurrency"`
+	SessionCount   int                 `json:"session_count"`
+	Sessions       []SessionBinding    `json:"sessions"`
 	Accounts       []SimpleAccountInfo `json:"accounts"`
 }
 

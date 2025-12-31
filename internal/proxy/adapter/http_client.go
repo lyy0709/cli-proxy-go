@@ -27,8 +27,8 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/pkg/logger"
 
 	utls "github.com/refraction-networking/utls"
 	"golang.org/x/net/proxy"
@@ -553,8 +553,8 @@ func NeedsChromeTLS(targetURL string) bool {
 	chromeTLSDomains := []string{
 		"chatgpt.com",
 		"claude.ai",
-		"api.openai.com",    // OpenAI 可能检测 TLS 指纹
-		"auth.openai.com",   // OpenAI OAuth
+		"api.openai.com",  // OpenAI 可能检测 TLS 指纹
+		"auth.openai.com", // OpenAI OAuth
 	}
 
 	for _, domain := range chromeTLSDomains {

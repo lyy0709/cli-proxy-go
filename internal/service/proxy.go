@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 
 	"gorm.io/gorm"
 )

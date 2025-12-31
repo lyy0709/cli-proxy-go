@@ -13,8 +13,8 @@ package response
 import (
 	"net/http"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/service"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

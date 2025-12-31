@@ -18,9 +18,9 @@ import (
 	"runtime"
 	"time"
 
-	"go-aiproxy/internal/cache"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
+	"cli-proxy/internal/cache"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -30,43 +30,43 @@ import (
 
 // SystemMonitorService 系统监控服务
 type SystemMonitorService struct {
-	db              *gorm.DB
-	accountRepo     *repository.AccountRepository
-	userRepo        *repository.UserRepository
-	dailyUsageRepo  *repository.DailyUsageRepository
-	requestLogRepo  *repository.RequestLogRepository
-	memoryCache     *cache.MemoryCache
+	db             *gorm.DB
+	accountRepo    *repository.AccountRepository
+	userRepo       *repository.UserRepository
+	dailyUsageRepo *repository.DailyUsageRepository
+	requestLogRepo *repository.RequestLogRepository
+	memoryCache    *cache.MemoryCache
 }
 
 // NewSystemMonitorService 创建系统监控服务
 func NewSystemMonitorService() *SystemMonitorService {
 	return &SystemMonitorService{
-		db:              repository.GetDB(),
-		accountRepo:     repository.NewAccountRepository(),
-		userRepo:        repository.NewUserRepository(),
-		dailyUsageRepo:  repository.NewDailyUsageRepository(),
-		requestLogRepo:  repository.NewRequestLogRepository(),
-		memoryCache:     cache.GetMemoryCache(),
+		db:             repository.GetDB(),
+		accountRepo:    repository.NewAccountRepository(),
+		userRepo:       repository.NewUserRepository(),
+		dailyUsageRepo: repository.NewDailyUsageRepository(),
+		requestLogRepo: repository.NewRequestLogRepository(),
+		memoryCache:    cache.GetMemoryCache(),
 	}
 }
 
 // SystemStats 系统资源统计
 type SystemStats struct {
 	// CPU
-	CPUCores     int     `json:"cpu_cores"`      // CPU 核心数
-	CPUUsage     float64 `json:"cpu_usage"`      // CPU 使用率 (%)
+	CPUCores int     `json:"cpu_cores"` // CPU 核心数
+	CPUUsage float64 `json:"cpu_usage"` // CPU 使用率 (%)
 
 	// 内存
-	MemoryTotal  uint64  `json:"memory_total"`   // 内存总量 (bytes)
-	MemoryUsed   uint64  `json:"memory_used"`    // 已用内存 (bytes)
-	MemoryFree   uint64  `json:"memory_free"`    // 可用内存 (bytes)
-	MemoryUsage  float64 `json:"memory_usage"`   // 内存使用率 (%)
+	MemoryTotal uint64  `json:"memory_total"` // 内存总量 (bytes)
+	MemoryUsed  uint64  `json:"memory_used"`  // 已用内存 (bytes)
+	MemoryFree  uint64  `json:"memory_free"`  // 可用内存 (bytes)
+	MemoryUsage float64 `json:"memory_usage"` // 内存使用率 (%)
 
 	// 磁盘
-	DiskTotal    uint64  `json:"disk_total"`     // 磁盘总量 (bytes)
-	DiskUsed     uint64  `json:"disk_used"`      // 已用磁盘 (bytes)
-	DiskFree     uint64  `json:"disk_free"`      // 可用磁盘 (bytes)
-	DiskUsage    float64 `json:"disk_usage"`     // 磁盘使用率 (%)
+	DiskTotal uint64  `json:"disk_total"` // 磁盘总量 (bytes)
+	DiskUsed  uint64  `json:"disk_used"`  // 已用磁盘 (bytes)
+	DiskFree  uint64  `json:"disk_free"`  // 可用磁盘 (bytes)
+	DiskUsage float64 `json:"disk_usage"` // 磁盘使用率 (%)
 }
 
 // MemoryCacheStats 内存缓存统计（替代原 Redis 统计）
@@ -80,26 +80,26 @@ type MemoryCacheStats struct {
 
 // MySQLStats MySQL 统计
 type MySQLStats struct {
-	TableCount   int    `json:"table_count"`     // 表数量
-	DataSize     int64  `json:"data_size"`       // 数据大小 (bytes)
-	IndexSize    int64  `json:"index_size"`      // 索引大小 (bytes)
-	TotalSize    int64  `json:"total_size"`      // 总大小 (bytes)
-	Connected    bool   `json:"connected"`       // 是否连接
+	TableCount int   `json:"table_count"` // 表数量
+	DataSize   int64 `json:"data_size"`   // 数据大小 (bytes)
+	IndexSize  int64 `json:"index_size"`  // 索引大小 (bytes)
+	TotalSize  int64 `json:"total_size"`  // 总大小 (bytes)
+	Connected  bool  `json:"connected"`   // 是否连接
 }
 
 // AccountStats 账号统计
 type AccountStats struct {
-	Total        int64 `json:"total"`           // 总数
-	Active       int64 `json:"active"`          // 正常可用
-	RateLimited  int64 `json:"rate_limited"`    // 被限流
-	Invalid      int64 `json:"invalid"`         // 无效/禁用
+	Total       int64 `json:"total"`        // 总数
+	Active      int64 `json:"active"`       // 正常可用
+	RateLimited int64 `json:"rate_limited"` // 被限流
+	Invalid     int64 `json:"invalid"`      // 无效/禁用
 }
 
 // UserStats 用户统计
 type UserStats struct {
-	Total        int64 `json:"total"`           // 总用户数
-	Active       int64 `json:"active"`          // 活跃用户数（今日有请求）
-	NewToday     int64 `json:"new_today"`       // 今日新增
+	Total    int64 `json:"total"`     // 总用户数
+	Active   int64 `json:"active"`    // 活跃用户数（今日有请求）
+	NewToday int64 `json:"new_today"` // 今日新增
 }
 
 // TodayUsageStats 今日使用统计
@@ -126,14 +126,14 @@ type TotalUsageStats struct {
 
 // MonitorData 完整监控数据
 type MonitorData struct {
-	System     SystemStats       `json:"system"`
-	Cache      MemoryCacheStats  `json:"cache"`       // 替代原 Redis
-	MySQL      MySQLStats        `json:"mysql"`
-	Accounts   AccountStats      `json:"accounts"`
-	Users      UserStats         `json:"users"`
-	TodayUsage TodayUsageStats   `json:"today_usage"`
-	TotalUsage TotalUsageStats   `json:"total_usage"` // 总使用统计
-	UpdatedAt  time.Time         `json:"updated_at"`
+	System     SystemStats      `json:"system"`
+	Cache      MemoryCacheStats `json:"cache"` // 替代原 Redis
+	MySQL      MySQLStats       `json:"mysql"`
+	Accounts   AccountStats     `json:"accounts"`
+	Users      UserStats        `json:"users"`
+	TodayUsage TodayUsageStats  `json:"today_usage"`
+	TotalUsage TotalUsageStats  `json:"total_usage"` // 总使用统计
+	UpdatedAt  time.Time        `json:"updated_at"`
 }
 
 // GetMonitorData 获取完整监控数据

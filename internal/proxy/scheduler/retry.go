@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/cache"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/proxy/adapter"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/cache"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/proxy/adapter"
+	"cli-proxy/pkg/logger"
 )
 
 var (
-	ErrAllAccountsFailed    = errors.New("all accounts failed")
-	ErrMaxRetriesExceeded   = errors.New("max retries exceeded")
+	ErrAllAccountsFailed      = errors.New("all accounts failed")
+	ErrMaxRetriesExceeded     = errors.New("max retries exceeded")
 	ErrAccountConcurrencyFull = errors.New("account concurrency limit reached")
 )
 
@@ -993,10 +993,10 @@ func (r *RetryableRequest) isConnectionError(err error) bool {
 
 // CircuitBreaker 熔断器
 type CircuitBreaker struct {
-	accountID     uint
-	failureCount  int
-	lastFailure   time.Time
-	state         CircuitState
+	accountID    uint
+	failureCount int
+	lastFailure  time.Time
+	state        CircuitState
 
 	// 配置
 	FailureThreshold int           // 失败阈值
@@ -1006,9 +1006,9 @@ type CircuitBreaker struct {
 type CircuitState int
 
 const (
-	CircuitClosed CircuitState = iota // 正常
-	CircuitOpen                       // 熔断
-	CircuitHalfOpen                   // 半开
+	CircuitClosed   CircuitState = iota // 正常
+	CircuitOpen                         // 熔断
+	CircuitHalfOpen                     // 半开
 )
 
 // NewCircuitBreaker 创建熔断器

@@ -11,7 +11,7 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h2 class="login-title">Go-AIProxy</h2>
+      <h2 class="login-title">Cli-Proxy</h2>
       <p class="login-subtitle">AI API 代理管理平台</p>
       <p class="welcome-text">欢迎各位</p>
 

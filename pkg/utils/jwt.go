@@ -14,7 +14,7 @@ import (
 	"errors"
 	"time"
 
-	"go-aiproxy/internal/config"
+	"cli-proxy/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -36,7 +36,7 @@ func GenerateToken(userID uint, username, role string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "go-aiproxy",
+			Issuer:    "cli-proxy",
 		},
 	}
 

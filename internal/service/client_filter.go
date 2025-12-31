@@ -18,9 +18,9 @@ import (
 	"strings"
 	"sync"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 )
 
 // ClientFilterService 客户端过滤服务
@@ -42,13 +42,13 @@ type clientFilterCache struct {
 
 // ValidationResult 验证结果
 type ValidationResult struct {
-	Allowed       bool                 `json:"allowed"`        // 是否允许
-	ClientType    string               `json:"client_type"`    // 识别的客户端类型
-	ClientName    string               `json:"client_name"`    // 客户端名称
-	MatchedRules  []RuleMatchResult    `json:"matched_rules"`  // 匹配的规则
-	FailedRules   []RuleMatchResult    `json:"failed_rules"`   // 失败的规则
-	Warnings      []string             `json:"warnings"`       // 警告信息
-	Details       map[string]string    `json:"details"`        // 详细信息
+	Allowed      bool              `json:"allowed"`       // 是否允许
+	ClientType   string            `json:"client_type"`   // 识别的客户端类型
+	ClientName   string            `json:"client_name"`   // 客户端名称
+	MatchedRules []RuleMatchResult `json:"matched_rules"` // 匹配的规则
+	FailedRules  []RuleMatchResult `json:"failed_rules"`  // 失败的规则
+	Warnings     []string          `json:"warnings"`      // 警告信息
+	Details      map[string]string `json:"details"`       // 详细信息
 }
 
 // RuleMatchResult 规则匹配结果

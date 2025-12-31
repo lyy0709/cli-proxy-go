@@ -11,9 +11,9 @@
 package handler
 
 import (
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/response"
 	"strconv"
 	"time"
 
@@ -327,8 +327,8 @@ func (h *PackageHandler) DeleteUserPackage(c *gin.Context) {
 	}
 
 	response.Success(c, map[string]interface{}{
-		"message":       "删除成功",
-		"unbound_keys":  unbindCount,
+		"message":      "删除成功",
+		"unbound_keys": unbindCount,
 	})
 }
 

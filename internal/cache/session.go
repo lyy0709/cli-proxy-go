@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/model"
+	"cli-proxy/internal/model"
 )
 
 // SessionCache 会话缓存服务（使用内存缓存）

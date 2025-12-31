@@ -14,10 +14,10 @@ import (
 	"errors"
 	"sync"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/proxy/scheduler"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/proxy/scheduler"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 )
 
 var (
@@ -47,62 +47,62 @@ func NewAccountService() *AccountService {
 // Account requests
 
 type CreateAccountRequest struct {
-	Name               string `json:"name" binding:"required"`
-	Type               string `json:"type" binding:"required"`
-	Enabled            bool   `json:"enabled"`
-	Priority           int    `json:"priority"`
-	Weight             int    `json:"weight"`
-	MaxConcurrency     int    `json:"max_concurrency"`
-	APIKey             string `json:"api_key"`
-	APISecret          string `json:"api_secret"`
-	AccessToken        string `json:"access_token"`
-	RefreshToken       string `json:"refresh_token"`
-	SessionKey         string `json:"session_key"`
-	OrganizationID     string `json:"organization_id"`
-	SubscriptionLevel  string `json:"subscription_level"`
-	OpusAccess         bool   `json:"opus_access"`
-	AWSAccessKey       string `json:"aws_access_key"`
-	AWSSecretKey       string `json:"aws_secret_key"`
-	AWSRegion          string `json:"aws_region"`
-	AWSSessionToken    string `json:"aws_session_token"`
-	AzureEndpoint      string `json:"azure_endpoint"`
+	Name                string `json:"name" binding:"required"`
+	Type                string `json:"type" binding:"required"`
+	Enabled             bool   `json:"enabled"`
+	Priority            int    `json:"priority"`
+	Weight              int    `json:"weight"`
+	MaxConcurrency      int    `json:"max_concurrency"`
+	APIKey              string `json:"api_key"`
+	APISecret           string `json:"api_secret"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token"`
+	SessionKey          string `json:"session_key"`
+	OrganizationID      string `json:"organization_id"`
+	SubscriptionLevel   string `json:"subscription_level"`
+	OpusAccess          bool   `json:"opus_access"`
+	AWSAccessKey        string `json:"aws_access_key"`
+	AWSSecretKey        string `json:"aws_secret_key"`
+	AWSRegion           string `json:"aws_region"`
+	AWSSessionToken     string `json:"aws_session_token"`
+	AzureEndpoint       string `json:"azure_endpoint"`
 	AzureDeploymentName string `json:"azure_deployment_name"`
-	AzureAPIVersion    string `json:"azure_api_version"`
-	BaseURL            string `json:"base_url"`
-	ModelMapping       string `json:"model_mapping"`
-	AllowedModels      string `json:"allowed_models"`
-	ProxyID            *uint  `json:"proxy_id"`
+	AzureAPIVersion     string `json:"azure_api_version"`
+	BaseURL             string `json:"base_url"`
+	ModelMapping        string `json:"model_mapping"`
+	AllowedModels       string `json:"allowed_models"`
+	ProxyID             *uint  `json:"proxy_id"`
 }
 
 type UpdateAccountRequest struct {
-	Name               string `json:"name"`
-	Enabled            *bool  `json:"enabled"`
-	Priority           *int   `json:"priority"`
-	Weight             *int   `json:"weight"`
-	MaxConcurrency     *int   `json:"max_concurrency"`
-	Status             string `json:"status"`
-	APIKey             string `json:"api_key"`
-	APISecret          string `json:"api_secret"`
-	AccessToken        string `json:"access_token"`
-	RefreshToken       string `json:"refresh_token"`
-	SessionKey         string `json:"session_key"`
-	OrganizationID     string `json:"organization_id"`
-	SubscriptionLevel  string `json:"subscription_level"`
-	OpusAccess         *bool  `json:"opus_access"`
-	AWSAccessKey       string `json:"aws_access_key"`
-	AWSSecretKey       string `json:"aws_secret_key"`
-	AWSRegion          string `json:"aws_region"`
-	AWSSessionToken    string `json:"aws_session_token"`
-	AzureEndpoint      string `json:"azure_endpoint"`
+	Name                string `json:"name"`
+	Enabled             *bool  `json:"enabled"`
+	Priority            *int   `json:"priority"`
+	Weight              *int   `json:"weight"`
+	MaxConcurrency      *int   `json:"max_concurrency"`
+	Status              string `json:"status"`
+	APIKey              string `json:"api_key"`
+	APISecret           string `json:"api_secret"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token"`
+	SessionKey          string `json:"session_key"`
+	OrganizationID      string `json:"organization_id"`
+	SubscriptionLevel   string `json:"subscription_level"`
+	OpusAccess          *bool  `json:"opus_access"`
+	AWSAccessKey        string `json:"aws_access_key"`
+	AWSSecretKey        string `json:"aws_secret_key"`
+	AWSRegion           string `json:"aws_region"`
+	AWSSessionToken     string `json:"aws_session_token"`
+	AzureEndpoint       string `json:"azure_endpoint"`
 	AzureDeploymentName string `json:"azure_deployment_name"`
-	AzureAPIVersion    string `json:"azure_api_version"`
-	BaseURL            string `json:"base_url"`
-	ModelMapping       string `json:"model_mapping"`
-	AllowedModels      string `json:"allowed_models"`
-	ProxyID            *uint  `json:"proxy_id"`
-	ClearProxy         bool   `json:"clear_proxy"`         // 是否清除代理（设置为 true 时清空 proxy_id）
-	ClearModelMapping  bool   `json:"clear_model_mapping"` // 是否清除模型映射
-	ClearAllowedModels bool   `json:"clear_allowed_models"` // 是否清除允许的模型列表
+	AzureAPIVersion     string `json:"azure_api_version"`
+	BaseURL             string `json:"base_url"`
+	ModelMapping        string `json:"model_mapping"`
+	AllowedModels       string `json:"allowed_models"`
+	ProxyID             *uint  `json:"proxy_id"`
+	ClearProxy          bool   `json:"clear_proxy"`          // 是否清除代理（设置为 true 时清空 proxy_id）
+	ClearModelMapping   bool   `json:"clear_model_mapping"`  // 是否清除模型映射
+	ClearAllowedModels  bool   `json:"clear_allowed_models"` // 是否清除允许的模型列表
 }
 
 // Account operations
@@ -118,33 +118,33 @@ func (s *AccountService) Create(req *CreateAccountRequest) (*model.Account, erro
 	}
 
 	account := &model.Account{
-		Name:               req.Name,
-		Type:               req.Type,
-		Platform:           platform,
-		Status:             model.AccountStatusValid,
-		Enabled:            req.Enabled,
-		Priority:           req.Priority,
-		Weight:             req.Weight,
-		MaxConcurrency:     req.MaxConcurrency,
-		APIKey:             req.APIKey,
-		APISecret:          req.APISecret,
-		AccessToken:        req.AccessToken,
-		RefreshToken:       req.RefreshToken,
-		SessionKey:         req.SessionKey,
-		OrganizationID:     req.OrganizationID,
-		SubscriptionLevel:  req.SubscriptionLevel,
-		OpusAccess:         req.OpusAccess,
-		AWSAccessKey:     req.AWSAccessKey,
-		AWSSecretKey:     req.AWSSecretKey,
-		AWSRegion:          req.AWSRegion,
-		AWSSessionToken:    req.AWSSessionToken,
-		AzureEndpoint:      req.AzureEndpoint,
+		Name:                req.Name,
+		Type:                req.Type,
+		Platform:            platform,
+		Status:              model.AccountStatusValid,
+		Enabled:             req.Enabled,
+		Priority:            req.Priority,
+		Weight:              req.Weight,
+		MaxConcurrency:      req.MaxConcurrency,
+		APIKey:              req.APIKey,
+		APISecret:           req.APISecret,
+		AccessToken:         req.AccessToken,
+		RefreshToken:        req.RefreshToken,
+		SessionKey:          req.SessionKey,
+		OrganizationID:      req.OrganizationID,
+		SubscriptionLevel:   req.SubscriptionLevel,
+		OpusAccess:          req.OpusAccess,
+		AWSAccessKey:        req.AWSAccessKey,
+		AWSSecretKey:        req.AWSSecretKey,
+		AWSRegion:           req.AWSRegion,
+		AWSSessionToken:     req.AWSSessionToken,
+		AzureEndpoint:       req.AzureEndpoint,
 		AzureDeploymentName: req.AzureDeploymentName,
-		AzureAPIVersion:    req.AzureAPIVersion,
-		BaseURL:            req.BaseURL,
-		ModelMapping:       req.ModelMapping,
-		AllowedModels:      req.AllowedModels,
-		ProxyID:            req.ProxyID,
+		AzureAPIVersion:     req.AzureAPIVersion,
+		BaseURL:             req.BaseURL,
+		ModelMapping:        req.ModelMapping,
+		AllowedModels:       req.AllowedModels,
+		ProxyID:             req.ProxyID,
 	}
 
 	if account.Priority == 0 {

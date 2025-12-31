@@ -92,7 +92,7 @@ rm -rf "$RESULT_DIR"
 
 # 测试5: 查看日志中的账号选择
 echo -e "\n[测试5] 查看最近的调度日志..."
-grep -E "(选中账户|会话粘性|账户并发)" /root/go-aiproxy/logs/scheduler-2025-12-14.log 2>/dev/null | tail -10 || echo "  无调度日志"
+grep -E "(选中账户|会话粘性|账户并发)" /root/cli-proxy/logs/scheduler-2025-12-14.log 2>/dev/null | tail -10 || echo "  无调度日志"
 
 echo -e "\n=========================================="
 echo "  测试完成"

@@ -1,5 +1,5 @@
 {
-  "name": "go-aiproxy-web",
+  "name": "cli-proxy-web",
   "private": true,
   "version": "1.0.0",
   "type": "module",

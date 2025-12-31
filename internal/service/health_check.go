@@ -21,11 +21,11 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/proxy/adapter"
-	"go-aiproxy/internal/proxy/scheduler"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/proxy/adapter"
+	"cli-proxy/internal/proxy/scheduler"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 )
 
 // AccountHealthCheckService 账号健康检查服务
@@ -1098,18 +1098,18 @@ func (s *AccountHealthCheckService) GetStatus() map[string]interface{} {
 		"problem_account_count": len(problemAccounts),
 		// 新增：各状态配置
 		"config": map[string]interface{}{
-			"auto_recovery":             s.configService.GetHealthCheckAutoRecovery(),
-			"auto_token_refresh":        s.configService.GetHealthCheckAutoTokenRefresh(),
-			"rate_limited_probe":        s.configService.GetRateLimitedProbeEnabled(),
-			"rate_limited_init_interval": s.configService.GetRateLimitedProbeInitInterval().Minutes(),
-			"rate_limited_max_interval":  s.configService.GetRateLimitedProbeMaxInterval().Minutes(),
-			"rate_limited_backoff":       s.configService.GetRateLimitedProbeBackoff(),
-			"suspended_probe_interval":   s.configService.GetSuspendedProbeInterval().Minutes(),
+			"auto_recovery":               s.configService.GetHealthCheckAutoRecovery(),
+			"auto_token_refresh":          s.configService.GetHealthCheckAutoTokenRefresh(),
+			"rate_limited_probe":          s.configService.GetRateLimitedProbeEnabled(),
+			"rate_limited_init_interval":  s.configService.GetRateLimitedProbeInitInterval().Minutes(),
+			"rate_limited_max_interval":   s.configService.GetRateLimitedProbeMaxInterval().Minutes(),
+			"rate_limited_backoff":        s.configService.GetRateLimitedProbeBackoff(),
+			"suspended_probe_interval":    s.configService.GetSuspendedProbeInterval().Minutes(),
 			"suspended_confirm_threshold": s.configService.GetSuspendedConfirmThreshold(),
-			"banned_probe":               s.configService.GetBannedProbeEnabled(),
-			"banned_probe_interval":      s.configService.GetBannedProbeInterval().Hours(),
-			"token_refresh_cooldown":     s.configService.GetTokenRefreshCooldown().Minutes(),
-			"token_refresh_max_retries":  s.configService.GetTokenRefreshMaxRetries(),
+			"banned_probe":                s.configService.GetBannedProbeEnabled(),
+			"banned_probe_interval":       s.configService.GetBannedProbeInterval().Hours(),
+			"token_refresh_cooldown":      s.configService.GetTokenRefreshCooldown().Minutes(),
+			"token_refresh_max_retries":   s.configService.GetTokenRefreshMaxRetries(),
 		},
 	}
 

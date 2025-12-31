@@ -14,8 +14,8 @@ package handler
 import (
 	"strconv"
 
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -265,9 +265,9 @@ func (h *UserHandler) BatchUpdatePriceRate(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"message":       "费率倍率更新成功",
+		"message":        "费率倍率更新成功",
 		"affected_count": len(req.UserIDs),
-		"price_rate":    req.PriceRate,
+		"price_rate":     req.PriceRate,
 	})
 }
 

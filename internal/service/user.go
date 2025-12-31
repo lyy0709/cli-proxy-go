@@ -15,10 +15,10 @@ import (
 	"errors"
 	"sync"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
-	"go-aiproxy/pkg/utils"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
+	"cli-proxy/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -322,8 +322,8 @@ func (s *UserService) ListAll() ([]model.User, error) {
 // UserWithKeyBalances 用户信息带 API Key 余额
 type UserWithKeyBalances struct {
 	model.User
-	QuotaKeyBalance         float64 `json:"quota_key_balance"`          // 额度 Key 的余额（套餐总额度 - 已用）
-	SubscriptionDailyRemain float64 `json:"subscription_daily_remain"`  // 订阅 Key 的当日剩余额度
+	QuotaKeyBalance         float64 `json:"quota_key_balance"`         // 额度 Key 的余额（套餐总额度 - 已用）
+	SubscriptionDailyRemain float64 `json:"subscription_daily_remain"` // 订阅 Key 的当日剩余额度
 }
 
 // ListWithKeyBalances 获取用户列表并带 API Key 余额信息

@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/pkg/response"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -111,29 +111,29 @@ func NewSystemLogHandler() *SystemLogHandler {
 		appLogDir:    "logs",
 		serverLogDir: "/var/log",
 		allowedServerLogs: map[string]string{
-			"auth.log":       "SSH认证日志",
-			"auth.log.1":     "SSH认证日志(旧)",
-			"syslog":         "系统日志",
-			"syslog.1":       "系统日志(旧)",
-			"kern.log":       "内核日志",
-			"kern.log.1":     "内核日志(旧)",
-			"dpkg.log":       "软件包日志",
-			"fail2ban.log":   "Fail2ban日志",
-			"nginx/access.log":  "Nginx访问日志",
-			"nginx/error.log":   "Nginx错误日志",
-			"mysql/error.log":   "MySQL错误日志",
+			"auth.log":         "SSH认证日志",
+			"auth.log.1":       "SSH认证日志(旧)",
+			"syslog":           "系统日志",
+			"syslog.1":         "系统日志(旧)",
+			"kern.log":         "内核日志",
+			"kern.log.1":       "内核日志(旧)",
+			"dpkg.log":         "软件包日志",
+			"fail2ban.log":     "Fail2ban日志",
+			"nginx/access.log": "Nginx访问日志",
+			"nginx/error.log":  "Nginx错误日志",
+			"mysql/error.log":  "MySQL错误日志",
 		},
 	}
 }
 
 // LogFileInfo 日志文件信息
 type LogFileInfo struct {
-	Name       string    `json:"name"`
-	Size       int64     `json:"size"`
-	ModTime    time.Time `json:"mod_time"`
-	Category   string    `json:"category"`
-	Date       string    `json:"date,omitempty"`
-	SizeHuman  string    `json:"size_human"`
+	Name      string    `json:"name"`
+	Size      int64     `json:"size"`
+	ModTime   time.Time `json:"mod_time"`
+	Category  string    `json:"category"`
+	Date      string    `json:"date,omitempty"`
+	SizeHuman string    `json:"size_human"`
 }
 
 // LogCategory 日志分类

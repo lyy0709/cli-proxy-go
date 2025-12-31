@@ -10,8 +10,8 @@
 package handler
 
 import (
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/service"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

@@ -14,7 +14,7 @@ package repository
 import (
 	"time"
 
-	"go-aiproxy/internal/model"
+	"cli-proxy/internal/model"
 
 	"gorm.io/gorm"
 )
@@ -475,9 +475,9 @@ func (r *AccountRepository) UpdateHealthCheckSchedule(id uint, nextCheckAt time.
 	now := time.Now()
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"last_health_check_at":   now,
-			"next_health_check_at":   nextCheckAt,
-			"health_check_interval":  intervalSeconds,
+			"last_health_check_at":  now,
+			"next_health_check_at":  nextCheckAt,
+			"health_check_interval": intervalSeconds,
 		}).Error
 }
 
@@ -506,8 +506,8 @@ func (r *AccountRepository) MarkAsSuspended(id uint, errMsg string) error {
 	}
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":       model.AccountStatusSuspended,
-			"last_error":   errMsg,
+			"status":        model.AccountStatusSuspended,
+			"last_error":    errMsg,
 			"last_error_at": gorm.Expr("NOW()"),
 		}).Error
 }
@@ -519,9 +519,9 @@ func (r *AccountRepository) MarkAsBanned(id uint, errMsg string) error {
 	}
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":       model.AccountStatusBanned,
-			"enabled":      false,
-			"last_error":   errMsg,
+			"status":        model.AccountStatusBanned,
+			"enabled":       false,
+			"last_error":    errMsg,
 			"last_error_at": gorm.Expr("NOW()"),
 		}).Error
 }
@@ -533,8 +533,8 @@ func (r *AccountRepository) MarkAsTokenExpired(id uint, errMsg string) error {
 	}
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":       model.AccountStatusTokenExpired,
-			"last_error":   errMsg,
+			"status":        model.AccountStatusTokenExpired,
+			"last_error":    errMsg,
 			"last_error_at": gorm.Expr("NOW()"),
 		}).Error
 }
@@ -546,8 +546,8 @@ func (r *AccountRepository) MarkAsInvalid(id uint, errMsg string) error {
 	}
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":       model.AccountStatusInvalid,
-			"last_error":   errMsg,
+			"status":        model.AccountStatusInvalid,
+			"last_error":    errMsg,
 			"last_error_at": gorm.Expr("NOW()"),
 		}).Error
 }
@@ -570,14 +570,14 @@ func (r *AccountRepository) MarkAsRateLimited(id uint, resetAt *time.Time, errMs
 func (r *AccountRepository) RecoverAccount(id uint) error {
 	return r.db.Model(&model.Account{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":                   model.AccountStatusValid,
-			"enabled":                  true,
-			"consecutive_error_count":  0,
-			"suspended_count":          0,
-			"last_error":               nil,
-			"rate_limit_reset_at":      nil,
-			"next_health_check_at":     nil,
-			"health_check_interval":    0,
+			"status":                  model.AccountStatusValid,
+			"enabled":                 true,
+			"consecutive_error_count": 0,
+			"suspended_count":         0,
+			"last_error":              nil,
+			"rate_limit_reset_at":     nil,
+			"next_health_check_at":    nil,
+			"health_check_interval":   0,
 		}).Error
 }
 

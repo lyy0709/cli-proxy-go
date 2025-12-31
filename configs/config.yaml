@@ -1,4 +1,4 @@
-# Go-AIProxy 配置文件（Docker 默认配置）
+# Cli-Proxy 配置文件（Docker 默认配置）
 server:
   port: 8080
   mode: release
@@ -14,7 +14,7 @@ mysql:
   max_open_conns: 100
 
 jwt:
-  secret: go-aiproxy-jwt-secret-change-in-production
+  secret: cli-proxy-jwt-secret-change-in-production
   expire_hours: 24
 
 log:

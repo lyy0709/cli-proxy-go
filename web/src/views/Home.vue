@@ -13,7 +13,7 @@
     <header class="home-header">
       <div class="logo">
         <i class="fa-solid fa-atom"></i>
-        <span>Go-AIProxy</span>
+        <span>Cli-Proxy</span>
       </div>
       <router-link to="/login" class="btn-login">
         <i class="fa-solid fa-right-to-bracket"></i>
@@ -105,7 +105,7 @@ export OPENAI_API_KEY="你的API_Key"</code></pre>
           </a>
         </p>
       </div>
-      <p class="copyright">&copy; 2025 Go-AIProxy. All rights reserved.</p>
+      <p class="copyright">&copy; 2025 Cli-Proxy. All rights reserved.</p>
     </footer>
   </div>
 </template>

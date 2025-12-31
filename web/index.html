@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Go-AIProxy</title>
+  <title>Cli-Proxy</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script>
-    ;(function () {
+    ; (function () {
       var overlayId = '__app_boot_overlay__'
       var startAt = Date.now()
 
@@ -46,10 +47,10 @@
             showOverlay(
               '静态资源加载失败（可能是 404 / 反向代理未转发 / 缓存问题）',
               '资源：' +
-                (t.href || t.src || '') +
-                '\n耗时：' +
-                (Date.now() - startAt) +
-                'ms\n建议：强制刷新 Ctrl+F5；检查 /assets 是否能访问。'
+              (t.href || t.src || '') +
+              '\n耗时：' +
+              (Date.now() - startAt) +
+              'ms\n建议：强制刷新 Ctrl+F5；检查 /assets 是否能访问。'
             )
           }
         },
@@ -76,16 +77,16 @@
           showOverlay(
             '前端脚本错误',
             '错误：' +
-              msg +
-              '\n位置：' +
-              src +
-              ':' +
-              line +
-              ':' +
-              col +
-              '\n耗时：' +
-              (Date.now() - startAt) +
-              'ms'
+            msg +
+            '\n位置：' +
+            src +
+            ':' +
+            line +
+            ':' +
+            col +
+            '\n耗时：' +
+            (Date.now() - startAt) +
+            'ms'
           )
         },
         true
@@ -93,8 +94,10 @@
     })()
   </script>
 </head>
+
 <body>
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

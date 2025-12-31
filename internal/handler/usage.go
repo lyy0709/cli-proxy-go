@@ -16,30 +16,30 @@ import (
 	"strconv"
 	"time"
 
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/repository"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
 
 // UsageHandler 使用统计处理器
 type UsageHandler struct {
-	usageService     *service.UsageService
-	pricingService   *service.PricingService
-	dailyUsageRepo   *repository.DailyUsageRepository
-	usageRecordRepo  *repository.UsageRecordRepository
-	userPackageRepo  *repository.UserPackageRepository
+	usageService    *service.UsageService
+	pricingService  *service.PricingService
+	dailyUsageRepo  *repository.DailyUsageRepository
+	usageRecordRepo *repository.UsageRecordRepository
+	userPackageRepo *repository.UserPackageRepository
 }
 
 // NewUsageHandler 创建使用统计处理器
 func NewUsageHandler() *UsageHandler {
 	return &UsageHandler{
-		usageService:     service.NewUsageService(),
-		pricingService:   service.NewPricingService(),
-		dailyUsageRepo:   repository.NewDailyUsageRepository(),
-		usageRecordRepo:  repository.NewUsageRecordRepository(),
-		userPackageRepo:  repository.NewUserPackageRepository(),
+		usageService:    service.NewUsageService(),
+		pricingService:  service.NewPricingService(),
+		dailyUsageRepo:  repository.NewDailyUsageRepository(),
+		usageRecordRepo: repository.NewUsageRecordRepository(),
+		userPackageRepo: repository.NewUserPackageRepository(),
 	}
 }
 
@@ -64,17 +64,17 @@ func (h *UsageHandler) GetUserUsageSummary(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"total_tokens":                 usage.TotalTokens,
-		"input_tokens":                 usage.InputTokens,
-		"output_tokens":                usage.OutputTokens,
-		"cache_creation_input_tokens":  usage.CacheCreationInputTokens,
-		"cache_read_input_tokens":      usage.CacheReadInputTokens,
-		"total_requests":               usage.Requests,
-		"total_cost":                   cost.TotalCost,
-		"input_cost":                   cost.InputCost,
-		"output_cost":                  cost.OutputCost,
-		"cache_create_cost":            cost.CacheCreateCost,
-		"cache_read_cost":              cost.CacheReadCost,
+		"total_tokens":                usage.TotalTokens,
+		"input_tokens":                usage.InputTokens,
+		"output_tokens":               usage.OutputTokens,
+		"cache_creation_input_tokens": usage.CacheCreationInputTokens,
+		"cache_read_input_tokens":     usage.CacheReadInputTokens,
+		"total_requests":              usage.Requests,
+		"total_cost":                  cost.TotalCost,
+		"input_cost":                  cost.InputCost,
+		"output_cost":                 cost.OutputCost,
+		"cache_create_cost":           cost.CacheCreateCost,
+		"cache_read_cost":             cost.CacheReadCost,
 	})
 }
 
@@ -98,14 +98,14 @@ func (h *UsageHandler) GetUserDailyUsage(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"date":                         date,
-		"total_tokens":                 usage.TotalTokens,
-		"input_tokens":                 usage.InputTokens,
-		"output_tokens":                usage.OutputTokens,
-		"cache_creation_input_tokens":  usage.CacheCreationInputTokens,
-		"cache_read_input_tokens":      usage.CacheReadInputTokens,
-		"total_requests":               usage.Requests,
-		"total_cost":                   cost.TotalCost,
+		"date":                        date,
+		"total_tokens":                usage.TotalTokens,
+		"input_tokens":                usage.InputTokens,
+		"output_tokens":               usage.OutputTokens,
+		"cache_creation_input_tokens": usage.CacheCreationInputTokens,
+		"cache_read_input_tokens":     usage.CacheReadInputTokens,
+		"total_requests":              usage.Requests,
+		"total_cost":                  cost.TotalCost,
 	})
 }
 
@@ -129,14 +129,14 @@ func (h *UsageHandler) GetUserMonthlyUsage(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"month":                        month,
-		"total_tokens":                 usage.TotalTokens,
-		"input_tokens":                 usage.InputTokens,
-		"output_tokens":                usage.OutputTokens,
-		"cache_creation_input_tokens":  usage.CacheCreationInputTokens,
-		"cache_read_input_tokens":      usage.CacheReadInputTokens,
-		"total_requests":               usage.Requests,
-		"total_cost":                   cost.TotalCost,
+		"month":                       month,
+		"total_tokens":                usage.TotalTokens,
+		"input_tokens":                usage.InputTokens,
+		"output_tokens":               usage.OutputTokens,
+		"cache_creation_input_tokens": usage.CacheCreationInputTokens,
+		"cache_read_input_tokens":     usage.CacheReadInputTokens,
+		"total_requests":              usage.Requests,
+		"total_cost":                  cost.TotalCost,
 	})
 }
 
@@ -245,14 +245,14 @@ func (h *UsageHandler) GetAPIKeyUsage(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"api_key_id":                   keyID,
-		"total_tokens":                 usage.TotalTokens,
-		"input_tokens":                 usage.InputTokens,
-		"output_tokens":                usage.OutputTokens,
-		"cache_creation_input_tokens":  usage.CacheCreationInputTokens,
-		"cache_read_input_tokens":      usage.CacheReadInputTokens,
-		"total_requests":               usage.Requests,
-		"total_cost":                   cost.TotalCost,
+		"api_key_id":                  keyID,
+		"total_tokens":                usage.TotalTokens,
+		"input_tokens":                usage.InputTokens,
+		"output_tokens":               usage.OutputTokens,
+		"cache_creation_input_tokens": usage.CacheCreationInputTokens,
+		"cache_read_input_tokens":     usage.CacheReadInputTokens,
+		"total_requests":              usage.Requests,
+		"total_cost":                  cost.TotalCost,
 	})
 }
 

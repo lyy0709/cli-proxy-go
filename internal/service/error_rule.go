@@ -11,9 +11,9 @@
 package service
 
 import (
-	"go-aiproxy/internal/errormatch"
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
+	"cli-proxy/internal/errormatch"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
 )
 
 type ErrorRuleService struct {

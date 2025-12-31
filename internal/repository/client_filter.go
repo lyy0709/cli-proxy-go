@@ -11,7 +11,7 @@
 package repository
 
 import (
-	"go-aiproxy/internal/model"
+	"cli-proxy/internal/model"
 
 	"gorm.io/gorm"
 )
@@ -133,15 +133,15 @@ func (r *ClientFilterRepository) ListAllRules() ([]model.ClientFilterRule, error
 // UpdateRule 更新规则
 func (r *ClientFilterRepository) UpdateRule(rule *model.ClientFilterRule) error {
 	return r.db.Model(&model.ClientFilterRule{}).Where("id = ?", rule.ID).Updates(map[string]interface{}{
-		"rule_key":     rule.RuleKey,
-		"rule_name":    rule.RuleName,
-		"description":  rule.Description,
-		"rule_type":    rule.RuleType,
-		"pattern":      rule.Pattern,
-		"field_path":   rule.FieldPath,
-		"enabled":      rule.Enabled,
-		"required":     rule.Required,
-		"priority":     rule.Priority,
+		"rule_key":    rule.RuleKey,
+		"rule_name":   rule.RuleName,
+		"description": rule.Description,
+		"rule_type":   rule.RuleType,
+		"pattern":     rule.Pattern,
+		"field_path":  rule.FieldPath,
+		"enabled":     rule.Enabled,
+		"required":    rule.Required,
+		"priority":    rule.Priority,
 	}).Error
 }
 

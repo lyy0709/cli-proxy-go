@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/pkg/logger"
 )
 
 type ClaudeAdapter struct{}

@@ -21,14 +21,14 @@ import (
 	"sync"
 	"time"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
 )
 
 // TokenManager OAuth Token 管理器
 type TokenManager struct {
-	mu       sync.RWMutex
-	repo     *repository.AccountRepository
+	mu   sync.RWMutex
+	repo *repository.AccountRepository
 
 	// Token 刷新配置
 	refreshThreshold time.Duration // 提前刷新时间

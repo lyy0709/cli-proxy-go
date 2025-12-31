@@ -15,9 +15,9 @@ import (
 	"strings"
 	"sync"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/pkg/logger"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/pkg/logger"
 )
 
 // ErrorMessageService 错误消息服务
@@ -258,7 +258,7 @@ func (s *ErrorMessageService) createDiscoveredError(errorType string, originalEr
 		Code:          httpCode,
 		ErrorType:     errorType,
 		CustomMessage: "服务暂时不可用", // 默认消息
-		Enabled:       false,          // 默认禁用，需要管理员手动启用
+		Enabled:       false,     // 默认禁用，需要管理员手动启用
 		Description:   "[自动发现] " + description,
 	}
 

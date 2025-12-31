@@ -15,10 +15,10 @@ import (
 	"context"
 	"strconv"
 
-	"go-aiproxy/internal/model"
-	"go-aiproxy/internal/repository"
-	"go-aiproxy/internal/service"
-	"go-aiproxy/pkg/response"
+	"cli-proxy/internal/model"
+	"cli-proxy/internal/repository"
+	"cli-proxy/internal/service"
+	"cli-proxy/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

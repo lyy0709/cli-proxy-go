@@ -11,7 +11,7 @@
 package repository
 
 import (
-	"go-aiproxy/internal/model"
+	"cli-proxy/internal/model"
 	"time"
 
 	"gorm.io/gorm"
