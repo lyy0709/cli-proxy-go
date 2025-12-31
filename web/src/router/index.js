@@ -18,6 +18,12 @@ const routes = [
     component: () => import('@/views/Login.vue'),
     meta: { guest: true }
   },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { guest: true }
+  },
   // 首页（公共页面）
   {
     path: '/',
@@ -214,8 +220,8 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 已登录访问登录页，跳转到后台
-  if (to.path === '/login' && userStore.isLoggedIn) {
+  // 已登录访问登录页或注册页，跳转到后台
+  if ((to.path === '/login' || to.path === '/register') && userStore.isLoggedIn) {
     if (userStore.user?.role === 'admin') {
       next('/admin/system-monitor')
     } else {

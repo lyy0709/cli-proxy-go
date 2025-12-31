@@ -16,14 +16,19 @@
           </svg>
           <span class="logo-text">Cli-Proxy</span>
         </div>
-        <router-link to="/login" class="login-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
-            <polyline points="10,17 15,12 10,7"/>
-            <line x1="15" y1="12" x2="3" y2="12"/>
-          </svg>
-          <span>登录</span>
-        </router-link>
+        <div class="nav-actions">
+          <router-link to="/register" class="register-btn">
+            <span>注册</span>
+          </router-link>
+          <router-link to="/login" class="login-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+              <polyline points="10,17 15,12 10,7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            <span>登录</span>
+          </router-link>
+        </div>
       </div>
     </header>
 
@@ -33,6 +38,25 @@
       <section class="hero">
         <h1 class="hero-title">统一的 AI API 接入</h1>
         <p class="hero-subtitle">支持 Claude、OpenAI、Gemini 多平台，一个端点搞定所有</p>
+        <div class="hero-actions">
+          <router-link to="/register" class="hero-btn primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+            免费注册
+          </router-link>
+          <router-link to="/login" class="hero-btn secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+              <polyline points="10,17 15,12 10,7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            登录后台
+          </router-link>
+        </div>
       </section>
 
       <!-- API 端点卡片 -->
@@ -141,26 +165,6 @@
           </div>
         </div>
       </section>
-
-      <!-- CTA -->
-      <section class="cta-section">
-        <div class="cta-card">
-          <div class="cta-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-            </svg>
-          </div>
-          <h3>需要 API Key？</h3>
-          <p>登录后台创建你的专属 API Key，开始使用 AI 服务</p>
-          <router-link to="/login" class="cta-btn">
-            立即开始
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12,5 19,12 12,19"/>
-            </svg>
-          </router-link>
-        </div>
-      </section>
     </main>
   </div>
 </template>
@@ -255,6 +259,26 @@ const copyText = async (text) => {
   color: var(--apple-text-primary);
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--apple-spacing-sm);
+}
+
+.register-btn {
+  padding: var(--apple-spacing-xs) var(--apple-spacing-md);
+  color: var(--apple-blue);
+  border-radius: var(--apple-radius-full);
+  text-decoration: none;
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.register-btn:hover {
+  background: var(--apple-blue-light);
+}
+
 .login-btn {
   display: flex;
   align-items: center;
@@ -304,7 +328,53 @@ const copyText = async (text) => {
   font-size: var(--apple-text-xl);
   color: var(--apple-text-secondary);
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto var(--apple-spacing-xl);
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--apple-spacing-md);
+  flex-wrap: wrap;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--apple-spacing-sm);
+  padding: var(--apple-spacing-md) var(--apple-spacing-xl);
+  border-radius: var(--apple-radius-full);
+  text-decoration: none;
+  font-size: var(--apple-text-base);
+  font-weight: var(--apple-font-semibold);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+}
+
+.hero-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-btn.primary {
+  background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.hero-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
+}
+
+.hero-btn.secondary {
+  background: var(--apple-bg-primary);
+  color: var(--apple-text-primary);
+  box-shadow: var(--apple-shadow-card);
+}
+
+.hero-btn.secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--apple-shadow-card-hover);
 }
 
 /* 端点区域 */
@@ -508,77 +578,16 @@ const copyText = async (text) => {
   box-shadow: var(--apple-shadow-md);
 }
 
-/* CTA 区域 */
-.cta-section {
-  display: flex;
-  justify-content: center;
-}
-
-.cta-card {
-  text-align: center;
-  padding: var(--apple-spacing-xxxl);
-  background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
-  border-radius: var(--apple-radius-xxl);
-  max-width: 500px;
-  width: 100%;
-}
-
-.cta-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--apple-spacing-lg);
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--apple-radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cta-icon svg {
-  width: 32px;
-  height: 32px;
-  color: white;
-}
-
-.cta-card h3 {
-  font-size: var(--apple-text-2xl);
-  font-weight: var(--apple-font-semibold);
-  color: white;
-  margin-bottom: var(--apple-spacing-sm);
-}
-
-.cta-card p {
-  font-size: var(--apple-text-base);
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: var(--apple-spacing-xl);
-}
-
-.cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--apple-spacing-xs);
-  padding: var(--apple-spacing-md) var(--apple-spacing-xl);
-  background: white;
-  color: var(--apple-blue);
-  border-radius: var(--apple-radius-full);
-  text-decoration: none;
-  font-size: var(--apple-text-base);
-  font-weight: var(--apple-font-semibold);
-  transition: all var(--apple-duration-fast) var(--apple-ease-default);
-}
-
-.cta-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.cta-btn:hover {
-  transform: scale(1.05);
-  box-shadow: var(--apple-shadow-lg);
-}
-
 /* 响应式 */
 @media (max-width: 768px) {
+  .nav-actions {
+    gap: var(--apple-spacing-xs);
+  }
+
+  .register-btn {
+    padding: var(--apple-spacing-xs) var(--apple-spacing-sm);
+  }
+
   .hero-title {
     font-size: var(--apple-text-3xl);
   }
@@ -587,12 +596,19 @@ const copyText = async (text) => {
     font-size: var(--apple-text-md);
   }
 
-  .endpoints-grid {
-    grid-template-columns: 1fr;
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
   }
 
-  .cta-card {
-    padding: var(--apple-spacing-xl);
+  .hero-btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+
+  .endpoints-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
