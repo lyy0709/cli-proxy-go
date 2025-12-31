@@ -93,7 +93,6 @@
                 type="text"
                 class="form-input"
                 placeholder="请输入验证码"
-                @keyup.enter="handleLogin"
               />
             </div>
             <div class="captcha-image-wrapper" @click="refreshCaptcha">

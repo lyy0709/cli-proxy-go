@@ -142,7 +142,6 @@
                 type="text"
                 class="form-input"
                 placeholder="请输入验证码"
-                @keyup.enter="handleRegister"
               />
             </div>
             <div class="captcha-image-wrapper" @click="refreshCaptcha">
@@ -173,7 +172,6 @@
                 class="form-input"
                 placeholder="请输入6位验证码"
                 maxlength="6"
-                @keyup.enter="handleRegister"
               />
             </div>
             <button

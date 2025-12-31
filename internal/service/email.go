@@ -92,6 +92,8 @@ func (s *EmailService) sendHTML(to, subject, body string) error {
 	// starttls: 使用 STARTTLS（端口 587，gomail 默认）
 	// none: 不使用加密
 	encryption := s.configSvc.GetString(model.ConfigSMTPEncryption)
+	log.Info("[email] SMTP 配置 | Host: %s | Port: %d | Encryption: %s", host, port, encryption)
+
 	switch encryption {
 	case "ssl":
 		d.SSL = true
@@ -101,6 +103,7 @@ func (s *EmailService) sendHTML(to, subject, body string) error {
 		d.SSL = false
 	default:
 		// 默认使用 STARTTLS
+		log.Warn("[email] 未知的加密方式: %s，使用默认 STARTTLS", encryption)
 		d.SSL = false
 	}
 
