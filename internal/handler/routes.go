@@ -50,6 +50,7 @@ func RegisterRoutes(r *gin.Engine) {
 	openaiResponsesHandler := NewOpenAIResponsesHandler()
 
 	captchaHandler := NewCaptchaHandler()
+	emailVerificationHandler := NewEmailVerificationHandler()
 
 	auth := r.Group("/api/auth")
 	{
@@ -57,6 +58,9 @@ func RegisterRoutes(r *gin.Engine) {
 		auth.GET("/captcha/status", captchaHandler.GetStatus)
 		auth.POST("/login", userHandler.Login)
 		auth.POST("/register", userHandler.Register)
+		// 邮箱验证码
+		auth.POST("/email/send-code", emailVerificationHandler.SendCode)
+		auth.GET("/email/status", emailVerificationHandler.GetStatus)
 	}
 
 	// ========== 代理转发接口 (需要 API Key 认证) ==========
@@ -300,6 +304,9 @@ func RegisterRoutes(r *gin.Engine) {
 				configs.GET("/category/:category", configHandler.GetByCategory) // 获取分类配置
 				configs.PUT("", configHandler.Update)                           // 更新配置
 			}
+
+			// 邮件测试
+			admin.POST("/email/test", emailVerificationHandler.TestSend) // 测试邮件发送
 
 			// 套餐管理
 			adminPkgHandler := NewPackageHandler()

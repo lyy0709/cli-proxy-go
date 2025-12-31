@@ -90,7 +90,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 验证验证码（如果启用）
+	// 验证图形验证码（如果启用）
 	if configSvc.GetCaptchaEnabled() {
 		if req.CaptchaID == "" || req.Captcha == "" {
 			response.BadRequest(c, "请输入验证码")
@@ -99,6 +99,19 @@ func (h *UserHandler) Register(c *gin.Context) {
 		captchaService := service.GetCaptchaService()
 		if !captchaService.Verify(req.CaptchaID, req.Captcha) {
 			response.BadRequest(c, "验证码错误")
+			return
+		}
+	}
+
+	// 验证邮箱验证码（如果启用）
+	if configSvc.GetEmailVerificationEnabled() {
+		if req.EmailCode == "" {
+			response.BadRequest(c, "请输入邮箱验证码")
+			return
+		}
+		emailVerifySvc := service.GetEmailVerificationService()
+		if !emailVerifySvc.Verify(req.Email, req.EmailCode, "register") {
+			response.BadRequest(c, "邮箱验证码错误或已过期")
 			return
 		}
 	}

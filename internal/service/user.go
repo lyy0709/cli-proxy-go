@@ -60,9 +60,10 @@ type LoginResponse struct {
 type RegisterRequest struct {
 	Username  string `json:"username" binding:"required,min=3,max=50"`
 	Password  string `json:"password" binding:"required,min=6"`
-	Email     string `json:"email" binding:"omitempty,email"`
+	Email     string `json:"email" binding:"required,email"` // 必填
 	CaptchaID string `json:"captcha_id"`
 	Captcha   string `json:"captcha"`
+	EmailCode string `json:"email_code"` // 邮箱验证码
 }
 
 // AdminCreateUserRequest 管理员创建用户请求
@@ -317,6 +318,11 @@ func (s *UserService) GetUsersByIDs(ids []uint) ([]model.User, error) {
 // ListAll 获取所有用户（不分页，用于管理员批量操作）
 func (s *UserService) ListAll() ([]model.User, error) {
 	return s.repo.ListAll()
+}
+
+// ExistsByEmail 检查邮箱是否已存在
+func (s *UserService) ExistsByEmail(email string) bool {
+	return s.repo.ExistsByEmail(email)
 }
 
 // UserWithKeyBalances 用户信息带 API Key 余额

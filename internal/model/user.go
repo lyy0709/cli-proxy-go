@@ -21,7 +21,7 @@ type User struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	Username  string         `gorm:"size:50;uniqueIndex;not null" json:"username"`
 	Password  string         `gorm:"size:100;not null" json:"-"`
-	Email     string         `gorm:"size:100;uniqueIndex" json:"email,omitempty"`
+	Email     string         `gorm:"size:100;uniqueIndex;not null" json:"email"` // 必填，唯一
 	Role      string         `gorm:"size:20;default:user" json:"role"`     // admin, user
 	Status    string         `gorm:"size:20;default:active" json:"status"` // active, disabled
 	Balance        float64        `gorm:"type:decimal(10,4);default:0" json:"balance"`      // 余额（美元）

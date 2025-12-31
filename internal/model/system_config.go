@@ -83,6 +83,21 @@ const (
 	// 健康检测策略 - Token 刷新
 	ConfigTokenRefreshCooldown   = "token_refresh_cooldown"    // 刷新失败冷却时间（分钟）
 	ConfigTokenRefreshMaxRetries = "token_refresh_max_retries" // 最大重试次数
+
+	// 邮箱验证相关
+	ConfigEmailVerificationEnabled = "email_verification_enabled" // 是否启用邮箱验证码注册
+	ConfigEmailCodeExpireMinutes   = "email_code_expire_minutes"  // 验证码有效期（分钟）
+	ConfigEmailSendInterval        = "email_send_interval"        // 同邮箱发送间隔（秒）
+	ConfigEmailDailyLimit          = "email_daily_limit"          // 每邮箱每日发送上限
+
+	// SMTP 配置
+	ConfigSMTPHost      = "smtp_host"       // SMTP 服务器地址
+	ConfigSMTPPort      = "smtp_port"       // SMTP 端口
+	ConfigSMTPUsername  = "smtp_username"   // SMTP 用户名
+	ConfigSMTPPassword  = "smtp_password"   // SMTP 密码
+	ConfigSMTPFromEmail = "smtp_from_email" // 发件人邮箱
+	ConfigSMTPFromName  = "smtp_from_name"  // 发件人名称
+	ConfigSMTPUseTLS    = "smtp_use_tls"    // 是否使用 TLS
 )
 
 // 默认配置
@@ -125,4 +140,17 @@ var DefaultConfigs = []SystemConfig{
 	// 健康检测策略 - Token 刷新
 	{Key: ConfigTokenRefreshCooldown, Value: "30", Type: "int", Desc: "Token 刷新失败冷却时间（分钟）", Category: "health_check"},
 	{Key: ConfigTokenRefreshMaxRetries, Value: "3", Type: "int", Desc: "Token 刷新最大重试次数", Category: "health_check"},
+	// 邮箱验证配置
+	{Key: ConfigEmailVerificationEnabled, Value: "false", Type: "bool", Desc: "是否启用邮箱验证码注册", Category: "email"},
+	{Key: ConfigEmailCodeExpireMinutes, Value: "5", Type: "int", Desc: "邮箱验证码有效期（分钟）", Category: "email"},
+	{Key: ConfigEmailSendInterval, Value: "60", Type: "int", Desc: "同邮箱发送间隔（秒）", Category: "email"},
+	{Key: ConfigEmailDailyLimit, Value: "10", Type: "int", Desc: "每邮箱每日发送上限", Category: "email"},
+	// SMTP 配置
+	{Key: ConfigSMTPHost, Value: "", Type: "string", Desc: "SMTP 服务器地址", Category: "email"},
+	{Key: ConfigSMTPPort, Value: "587", Type: "int", Desc: "SMTP 端口", Category: "email"},
+	{Key: ConfigSMTPUsername, Value: "", Type: "string", Desc: "SMTP 用户名", Category: "email"},
+	{Key: ConfigSMTPPassword, Value: "", Type: "string", Desc: "SMTP 密码", Category: "email"},
+	{Key: ConfigSMTPFromEmail, Value: "", Type: "string", Desc: "发件人邮箱地址", Category: "email"},
+	{Key: ConfigSMTPFromName, Value: "Cli-Proxy", Type: "string", Desc: "发件人名称", Category: "email"},
+	{Key: ConfigSMTPUseTLS, Value: "true", Type: "bool", Desc: "是否使用 TLS 加密", Category: "email"},
 }

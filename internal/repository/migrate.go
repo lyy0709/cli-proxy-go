@@ -44,6 +44,8 @@ func AutoMigrate() error {
 		&model.ErrorRule{},
 		// 模型映射
 		&model.ModelMapping{},
+		// 邮箱验证码
+		&model.EmailVerification{},
 	)
 }
 

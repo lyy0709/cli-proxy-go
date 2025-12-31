@@ -352,3 +352,37 @@ func (s *ConfigService) GetTokenRefreshMaxRetries() int {
 	}
 	return val
 }
+
+// ========== 邮箱验证配置便捷方法 ==========
+
+// GetEmailVerificationEnabled 获取是否启用邮箱验证码注册
+func (s *ConfigService) GetEmailVerificationEnabled() bool {
+	return s.GetBool(model.ConfigEmailVerificationEnabled)
+}
+
+// GetEmailCodeExpireMinutes 获取验证码有效期（分钟）
+func (s *ConfigService) GetEmailCodeExpireMinutes() int {
+	val := s.GetInt(model.ConfigEmailCodeExpireMinutes)
+	if val <= 0 {
+		return 5 // 默认 5 分钟
+	}
+	return val
+}
+
+// GetEmailSendInterval 获取同邮箱发送间隔（秒）
+func (s *ConfigService) GetEmailSendInterval() int {
+	val := s.GetInt(model.ConfigEmailSendInterval)
+	if val <= 0 {
+		return 60 // 默认 60 秒
+	}
+	return val
+}
+
+// GetEmailDailyLimit 获取每邮箱每日发送上限
+func (s *ConfigService) GetEmailDailyLimit() int {
+	val := s.GetInt(model.ConfigEmailDailyLimit)
+	if val <= 0 {
+		return 10 // 默认 10 次
+	}
+	return val
+}

@@ -454,37 +454,15 @@
         </div>
       </div>
     </div>
-
-    <!-- Toast 通知 -->
-    <div v-if="toast.visible" :class="['toast', toast.type]">
-      <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span>{{ toast.message }}</span>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import api from '@/api'
+import { ElMessage, ElMessageBox } from '@/utils/toast'
 
 const activeTab = ref('messages')
-
-// Toast 通知
-const toast = reactive({ visible: false, type: 'success', message: '' })
-function showToast(message, type = 'success') {
-  toast.message = message
-  toast.type = type
-  toast.visible = true
-  setTimeout(() => { toast.visible = false }, 3000)
-}
 
 // 确认对话框
 const confirmDialogVisible = ref(false)
@@ -530,7 +508,7 @@ async function loadMessages() {
     const res = await api.getErrorMessages()
     messages.value = res.data || res || []
   } catch (e) {
-    showToast('加载失败', 'error')
+    ElMessage.error('加载失败')
   }
   finally { loadingMessages.value = false }
 }
@@ -549,22 +527,22 @@ function showEditMessageDialog(row) {
 
 async function submitMessage() {
   if (!messageForm.code || !messageForm.error_type || !messageForm.custom_message) {
-    showToast('请填写必填项', 'error')
+    ElMessage.error('请填写必填项')
     return
   }
   submittingMessage.value = true
   try {
     if (isEditMessage.value) {
       await api.updateErrorMessage(messageForm.id, { custom_message: messageForm.custom_message, enabled: messageForm.enabled, description: messageForm.description })
-      showToast('更新成功')
+      ElMessage.success('更新成功')
     } else {
       await api.createErrorMessage({ code: messageForm.code, error_type: messageForm.error_type, custom_message: messageForm.custom_message, enabled: messageForm.enabled, description: messageForm.description })
-      showToast('创建成功')
+      ElMessage.success('创建成功')
     }
     messageDialogVisible.value = false
     loadMessages()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { submittingMessage.value = false }
 }
@@ -573,9 +551,9 @@ async function toggleMessageEnabled(row) {
   try {
     await api.toggleErrorMessage(row.id)
     row.enabled = !row.enabled
-    showToast('状态已更新')
+    ElMessage.success('状态已更新')
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
 }
 
@@ -583,10 +561,10 @@ function confirmDeleteMessage(row) {
   showConfirm('确认删除', '确定删除该错误消息配置?', async () => {
     try {
       await api.deleteErrorMessage(row.id)
-      showToast('删除成功')
+      ElMessage.success('删除成功')
       loadMessages()
     } catch (e) {
-      showToast('删除失败', 'error')
+      ElMessage.error('删除失败')
     }
   })
 }
@@ -595,10 +573,10 @@ async function initMessageDefaults() {
   initializingMessages.value = true
   try {
     await api.initErrorMessages()
-    showToast('默认配置已初始化')
+    ElMessage.success('默认配置已初始化')
     loadMessages()
   } catch (e) {
-    showToast('初始化失败', 'error')
+    ElMessage.error('初始化失败')
   }
   finally { initializingMessages.value = false }
 }
@@ -607,9 +585,9 @@ async function refreshMessageCache() {
   refreshingMessages.value = true
   try {
     await api.refreshErrorMessages()
-    showToast('缓存已刷新')
+    ElMessage.success('缓存已刷新')
   } catch (e) {
-    showToast('刷新失败', 'error')
+    ElMessage.error('刷新失败')
   }
   finally { refreshingMessages.value = false }
 }
@@ -618,10 +596,10 @@ async function enableAllMessages() {
   enablingAll.value = true
   try {
     const res = await api.enableAllErrorMessages()
-    showToast(`已启用所有配置（影响 ${res.data?.affected || 0} 条）`)
+    ElMessage.success(`已启用所有配置（影响 ${res.data?.affected || 0} 条）`)
     loadMessages()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { enablingAll.value = false }
 }
@@ -630,10 +608,10 @@ async function disableAllMessages() {
   disablingAll.value = true
   try {
     const res = await api.disableAllErrorMessages()
-    showToast(`已禁用所有配置（影响 ${res.data?.affected || 0} 条）`)
+    ElMessage.success(`已禁用所有配置（影响 ${res.data?.affected || 0} 条）`)
     loadMessages()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { disablingAll.value = false }
 }
@@ -668,7 +646,7 @@ async function loadRules() {
     rules.value = res.data?.items || []
     rulePagination.total = res.data?.total || 0
   } catch (e) {
-    showToast('加载失败', 'error')
+    ElMessage.error('加载失败')
   }
   finally { loadingRules.value = false }
 }
@@ -687,7 +665,7 @@ function showEditRuleDialog(row) {
 
 async function submitRule() {
   if (!ruleForm.target_status) {
-    showToast('请选择目标状态', 'error')
+    ElMessage.error('请选择目标状态')
     return
   }
   submittingRule.value = true
@@ -695,15 +673,15 @@ async function submitRule() {
     const data = { http_status_code: ruleForm.http_status_code || 0, keyword: ruleForm.keyword || '', target_status: ruleForm.target_status, priority: ruleForm.priority, description: ruleForm.description, enabled: ruleForm.enabled }
     if (isEditRule.value) {
       await api.updateErrorRule(ruleForm.id, data)
-      showToast('更新成功')
+      ElMessage.success('更新成功')
     } else {
       await api.createErrorRule(data)
-      showToast('创建成功')
+      ElMessage.success('创建成功')
     }
     ruleDialogVisible.value = false
     loadRules()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { submittingRule.value = false }
 }
@@ -712,9 +690,9 @@ async function toggleRuleEnabled(row) {
   try {
     await api.updateErrorRule(row.id, { enabled: !row.enabled })
     row.enabled = !row.enabled
-    showToast('状态已更新')
+    ElMessage.success('状态已更新')
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
 }
 
@@ -722,10 +700,10 @@ function confirmDeleteRule(row) {
   showConfirm('确认删除', '确定删除该规则?', async () => {
     try {
       await api.deleteErrorRule(row.id)
-      showToast('删除成功')
+      ElMessage.success('删除成功')
       loadRules()
     } catch (e) {
-      showToast('删除失败', 'error')
+      ElMessage.error('删除失败')
     }
   })
 }
@@ -735,10 +713,10 @@ async function resetRulesToDefault() {
     resettingRules.value = true
     try {
       await api.resetErrorRules()
-      showToast('已重置为默认规则')
+      ElMessage.success('已重置为默认规则')
       loadRules()
     } catch (e) {
-      showToast('重置失败', 'error')
+      ElMessage.error('重置失败')
     }
     finally { resettingRules.value = false }
   })
@@ -748,9 +726,9 @@ async function refreshRuleCache() {
   refreshingRules.value = true
   try {
     const res = await api.refreshErrorRulesCache()
-    showToast(`缓存已刷新，共 ${res.data?.rule_count || 0} 条规则`)
+    ElMessage.success(`缓存已刷新，共 ${res.data?.rule_count || 0} 条规则`)
   } catch (e) {
-    showToast('刷新失败', 'error')
+    ElMessage.error('刷新失败')
   }
   finally { refreshingRules.value = false }
 }
@@ -759,10 +737,10 @@ async function enableAllRules() {
   enablingAllRules.value = true
   try {
     const res = await api.enableAllErrorRules()
-    showToast(`已启用所有规则（影响 ${res.data?.affected || 0} 条）`)
+    ElMessage.success(`已启用所有规则（影响 ${res.data?.affected || 0} 条）`)
     loadRules()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { enablingAllRules.value = false }
 }
@@ -771,10 +749,10 @@ async function disableAllRules() {
   disablingAllRules.value = true
   try {
     const res = await api.disableAllErrorRules()
-    showToast(`已禁用所有规则（影响 ${res.data?.affected || 0} 条）`)
+    ElMessage.success(`已禁用所有规则（影响 ${res.data?.affected || 0} 条）`)
     loadRules()
   } catch (e) {
-    showToast('操作失败', 'error')
+    ElMessage.error('操作失败')
   }
   finally { disablingAllRules.value = false }
 }

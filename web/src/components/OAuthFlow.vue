@@ -445,26 +445,13 @@
         {{ exchanging ? '验证中...' : '完成授权' }}
       </button>
     </div>
-
-    <!-- Toast 通知 -->
-    <div v-if="toast.visible" :class="['toast', toast.type]">
-      <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span>{{ toast.message }}</span>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import api from '@/api'
+import { ElMessage } from '@/utils/toast'
 
 const props = defineProps({
   platform: {
@@ -483,15 +470,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['success', 'back'])
-
-// Toast 通知
-const toast = reactive({ visible: false, type: 'success', message: '' })
-function showToast(message, type = 'success') {
-  toast.message = message
-  toast.type = type
-  toast.visible = true
-  setTimeout(() => { toast.visible = false }, 3000)
-}
 
 // 状态
 const loading = ref(false)
@@ -550,7 +528,7 @@ watch(authCode, (newValue) => {
         const code = url.searchParams.get('code')
         if (code) {
           authCode.value = code
-          showToast('成功提取授权码！')
+          ElMessage.success('成功提取授权码！')
         }
       } catch (e) {
         console.error('Failed to parse URL:', e)
@@ -587,9 +565,9 @@ async function generateAuthUrl() {
     authUrl.value = res.data.auth_url
     sessionId.value = res.data.session_id
 
-    showToast('授权链接已生成')
+    ElMessage.success('授权链接已生成')
   } catch (e) {
-    showToast(e.response?.data?.message || e.message || '生成授权链接失败', 'error')
+    ElMessage.error(e.response?.data?.message || e.message || '生成授权链接失败')
   } finally {
     loading.value = false
   }
@@ -606,14 +584,14 @@ function regenerateAuthUrl() {
 // 复制授权URL
 async function copyAuthUrl() {
   if (!authUrl.value) {
-    showToast('请先生成授权链接', 'error')
+    ElMessage.error('请先生成授权链接')
     return
   }
 
   try {
     await navigator.clipboard.writeText(authUrl.value)
     copied.value = true
-    showToast('链接已复制')
+    ElMessage.success('链接已复制')
     setTimeout(() => { copied.value = false }, 2000)
   } catch (e) {
     const input = document.createElement('input')
@@ -623,7 +601,7 @@ async function copyAuthUrl() {
     document.execCommand('copy')
     document.body.removeChild(input)
     copied.value = true
-    showToast('链接已复制')
+    ElMessage.success('链接已复制')
     setTimeout(() => { copied.value = false }, 2000)
   }
 }
@@ -647,7 +625,7 @@ async function exchangeCode() {
 
     emit('success', tokenInfo)
   } catch (e) {
-    showToast(e.response?.data?.message || e.message || '授权失败，请检查授权码是否正确', 'error')
+    ElMessage.error(e.response?.data?.message || e.message || '授权失败，请检查授权码是否正确')
   } finally {
     exchanging.value = false
   }

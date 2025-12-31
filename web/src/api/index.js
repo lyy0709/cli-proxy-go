@@ -11,44 +11,7 @@
 import { createAlova } from 'alova'
 import adapterFetch from 'alova/fetch'
 import router from '@/router'
-
-// 自定义 Toast 消息提示
-function showToast(msg, type = 'info') {
-  const existingToast = document.querySelector('.api-toast-message')
-  if (existingToast) {
-    existingToast.remove()
-  }
-
-  const div = document.createElement('div')
-  div.className = `api-toast-message api-toast-${type}`
-  div.textContent = msg
-
-  // 添加样式
-  Object.assign(div.style, {
-    position: 'fixed',
-    top: '20px',
-    left: '50%',
-    transform: 'translateX(-50%) translateY(-100px)',
-    padding: '12px 24px',
-    background: type === 'error' ? '#ff3b30' : type === 'success' ? '#34c759' : '#fff',
-    color: type === 'error' || type === 'success' ? '#fff' : '#1d1d1f',
-    borderRadius: '12px',
-    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
-    fontSize: '14px',
-    fontWeight: '500',
-    zIndex: '9999',
-    transition: 'transform 0.3s ease'
-  })
-
-  document.body.appendChild(div)
-  requestAnimationFrame(() => {
-    div.style.transform = 'translateX(-50%) translateY(0)'
-  })
-  setTimeout(() => {
-    div.style.transform = 'translateX(-50%) translateY(-100px)'
-    setTimeout(() => div.remove(), 300)
-  }, 3000)
-}
+import { ElMessage } from '@/utils/toast'
 
 // 创建 alova 实例
 const alovaInstance = createAlova({
@@ -82,11 +45,11 @@ const alovaInstance = createAlova({
       }
       // 业务错误
       const msg = data?.message || data?.error || '请求失败'
-      showToast(msg, 'error')
+      ElMessage.error(msg)
       throw new Error(msg)
     },
     onError: (error, method) => {
-      showToast(error.message || '网络错误', 'error')
+      ElMessage.error(error.message || '网络错误')
       throw error
     }
   }
@@ -104,6 +67,10 @@ export default {
   getCaptcha: () => Get('/auth/captcha'),
   login: (data) => Post('/auth/login', data),
   register: (data) => Post('/auth/register', data),
+  // Email Verification
+  sendEmailCode: (email, purpose) => Post('/auth/email/send-code', { email, purpose }),
+  getEmailStatus: () => Get('/auth/email/status'),
+  testEmailSend: (toEmail) => Post('/admin/email/test', { to_email: toEmail }),
 
   // Profile
   getProfile: () => Get('/profile'),

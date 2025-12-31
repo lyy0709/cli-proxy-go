@@ -51,7 +51,7 @@
 
         <!-- 邮箱 -->
         <div class="form-group">
-          <label class="form-label">邮箱 <span class="optional">(选填)</span></label>
+          <label class="form-label">邮箱 <span class="required">*</span></label>
           <div class="input-wrapper">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -158,6 +158,41 @@
           <span v-if="errors.captcha" class="form-error">{{ errors.captcha }}</span>
         </div>
 
+        <!-- 邮箱验证码 -->
+        <div v-if="emailVerificationEnabled" class="form-group">
+          <label class="form-label">邮箱验证码 <span class="required">*</span></label>
+          <div class="email-code-row">
+            <div class="input-wrapper email-code-input">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+              <input
+                v-model="form.emailCode"
+                type="text"
+                class="form-input"
+                placeholder="请输入6位验证码"
+                maxlength="6"
+                @keyup.enter="handleRegister"
+              />
+            </div>
+            <button
+              type="button"
+              class="send-code-btn"
+              :disabled="!canSendEmailCode"
+              @click="sendEmailCode"
+            >
+              <svg v-if="emailSending" class="spinner-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                <path d="M12 2a10 10 0 019.95 9" stroke-linecap="round"/>
+              </svg>
+              <span v-else-if="emailCountdown > 0">{{ emailCountdown }}s</span>
+              <span v-else>获取验证码</span>
+            </button>
+          </div>
+          <span v-if="errors.emailCode" class="form-error">{{ errors.emailCode }}</span>
+        </div>
+
         <!-- 注册按钮 -->
         <button type="submit" class="register-btn" :disabled="loading">
           <svg v-if="loading" class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -178,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from '@/utils/toast'
 import api from '@/api'
@@ -192,12 +227,20 @@ const captchaImage = ref('')
 const captchaId = ref('')
 const captchaEnabled = ref(true)
 
+// 邮箱验证码状态
+const emailVerificationEnabled = ref(false)
+const emailSendInterval = ref(60)
+const emailCountdown = ref(0)
+const emailSending = ref(false)
+let countdownTimer = null
+
 const form = reactive({
   username: '',
   email: '',
   password: '',
   confirmPassword: '',
-  captcha: ''
+  captcha: '',
+  emailCode: ''
 })
 
 const errors = reactive({
@@ -205,7 +248,15 @@ const errors = reactive({
   email: '',
   password: '',
   confirmPassword: '',
-  captcha: ''
+  captcha: '',
+  emailCode: ''
+})
+
+// 是否可以发送邮箱验证码
+const canSendEmailCode = computed(() => {
+  if (emailSending.value || emailCountdown.value > 0) return false
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return form.email && emailRegex.test(form.email)
 })
 
 function validate() {
@@ -215,6 +266,7 @@ function validate() {
   errors.password = ''
   errors.confirmPassword = ''
   errors.captcha = ''
+  errors.emailCode = ''
 
   // 用户名验证
   if (!form.username.trim()) {
@@ -228,8 +280,11 @@ function validate() {
     valid = false
   }
 
-  // 邮箱验证（可选，但如果填写了需要验证格式）
-  if (form.email.trim()) {
+  // 邮箱验证（必填）
+  if (!form.email.trim()) {
+    errors.email = '请输入邮箱地址'
+    valid = false
+  } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(form.email)) {
       errors.email = '请输入有效的邮箱地址'
@@ -261,6 +316,12 @@ function validate() {
     valid = false
   }
 
+  // 邮箱验证码验证
+  if (emailVerificationEnabled.value && !form.emailCode.trim()) {
+    errors.emailCode = '请输入邮箱验证码'
+    valid = false
+  }
+
   return valid
 }
 
@@ -277,6 +338,41 @@ async function refreshCaptcha() {
   }
 }
 
+async function fetchEmailStatus() {
+  try {
+    const res = await api.getEmailStatus()
+    emailVerificationEnabled.value = res.data.email_verification_enabled === true
+    emailSendInterval.value = res.data.send_interval || 60
+  } catch {
+    emailVerificationEnabled.value = false
+  }
+}
+
+async function sendEmailCode() {
+  if (!canSendEmailCode.value) return
+
+  errors.emailCode = ''
+  emailSending.value = true
+
+  try {
+    const res = await api.sendEmailCode(form.email, 'register')
+    ElMessage.success('验证码已发送到您的邮箱')
+    // 开始倒计时
+    emailCountdown.value = emailSendInterval.value
+    countdownTimer = setInterval(() => {
+      emailCountdown.value--
+      if (emailCountdown.value <= 0) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+      }
+    }, 1000)
+  } catch (error) {
+    // 错误信息已由 api 拦截器处理
+  } finally {
+    emailSending.value = false
+  }
+}
+
 async function handleRegister() {
   if (!validate()) return
 
@@ -285,11 +381,14 @@ async function handleRegister() {
     const registerData = {
       username: form.username,
       password: form.password,
-      email: form.email || undefined
+      email: form.email
     }
     if (captchaEnabled.value) {
       registerData.captcha_id = captchaId.value
       registerData.captcha = form.captcha
+    }
+    if (emailVerificationEnabled.value) {
+      registerData.email_code = form.emailCode
     }
 
     await api.register(registerData)
@@ -309,6 +408,7 @@ async function handleRegister() {
 
 onMounted(() => {
   refreshCaptcha()
+  fetchEmailStatus()
 })
 </script>
 
@@ -433,12 +533,6 @@ onMounted(() => {
   color: var(--apple-red);
 }
 
-.optional {
-  font-size: var(--apple-text-xs);
-  color: var(--apple-text-tertiary);
-  font-weight: var(--apple-font-regular);
-}
-
 .input-wrapper {
   position: relative;
   display: flex;
@@ -542,6 +636,54 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 邮箱验证码 */
+.email-code-row {
+  display: flex;
+  gap: var(--apple-spacing-sm);
+}
+
+.email-code-input {
+  flex: 1;
+}
+
+.send-code-btn {
+  min-width: 110px;
+  height: 44px;
+  padding: 0 var(--apple-spacing-md);
+  background: linear-gradient(135deg, var(--apple-blue) 0%, #5856d6 100%);
+  color: white;
+  font-size: var(--apple-text-sm);
+  font-weight: var(--apple-font-medium);
+  border-radius: var(--apple-radius-md);
+  transition: all var(--apple-duration-fast) var(--apple-ease-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.send-code-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.send-code-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.send-code-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--apple-fill-tertiary);
+  color: var(--apple-text-tertiary);
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
 }
 
 /* 注册按钮 */

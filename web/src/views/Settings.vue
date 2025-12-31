@@ -382,6 +382,142 @@
           </div>
         </div>
       </div>
+
+      <!-- 邮件配置 -->
+      <div class="settings-card">
+        <div class="card-header">
+          <div class="card-icon email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <h3>邮件配置</h3>
+        </div>
+        <div class="card-body" :class="{ loading }">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">启用邮箱验证码注册</span>
+              <span class="setting-desc">开启后注册时需要邮箱验证码</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" v-model="emailVerificationEnabled" @change="markDirty" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">验证码有效期</span>
+              <span class="setting-desc">邮箱验证码的有效时间</span>
+            </div>
+            <div class="input-with-unit">
+              <input type="number" v-model.number="configs.email_code_expire_minutes" min="1" max="30" class="form-input" @change="markDirty" />
+              <span class="unit">分钟</span>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">发送间隔</span>
+              <span class="setting-desc">同一邮箱两次发送的最小间隔</span>
+            </div>
+            <div class="input-with-unit">
+              <input type="number" v-model.number="configs.email_send_interval" min="30" max="300" class="form-input" @change="markDirty" />
+              <span class="unit">秒</span>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">每日发送上限</span>
+              <span class="setting-desc">每个邮箱每天最多发送次数</span>
+            </div>
+            <div class="input-with-unit">
+              <input type="number" v-model.number="configs.email_daily_limit" min="1" max="100" class="form-input" @change="markDirty" />
+              <span class="unit">次/天</span>
+            </div>
+          </div>
+
+          <div class="setting-section-title">SMTP 服务器配置</div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">SMTP 服务器</span>
+              <span class="setting-desc">邮件服务器地址（如 smtp.gmail.com）</span>
+            </div>
+            <input type="text" v-model="configs.smtp_host" class="form-input" placeholder="smtp.example.com" @change="markDirty" />
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">SMTP 端口</span>
+              <span class="setting-desc">通常为 587（TLS）或 465（SSL）</span>
+            </div>
+            <div class="input-with-unit">
+              <input type="number" v-model.number="configs.smtp_port" min="1" max="65535" class="form-input" @change="markDirty" />
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">SMTP 用户名</span>
+              <span class="setting-desc">通常是邮箱地址</span>
+            </div>
+            <input type="text" v-model="configs.smtp_username" class="form-input" placeholder="user@example.com" @change="markDirty" />
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">SMTP 密码</span>
+              <span class="setting-desc">邮箱密码或应用专用密码</span>
+            </div>
+            <input type="password" v-model="configs.smtp_password" class="form-input" placeholder="应用专用密码" @change="markDirty" />
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">发件人邮箱</span>
+              <span class="setting-desc">发送验证码邮件的发件人地址</span>
+            </div>
+            <input type="email" v-model="configs.smtp_from_email" class="form-input" placeholder="noreply@example.com" @change="markDirty" />
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">发件人名称</span>
+              <span class="setting-desc">邮件中显示的发件人名称</span>
+            </div>
+            <input type="text" v-model="configs.smtp_from_name" class="form-input" placeholder="Cli-Proxy" @change="markDirty" />
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">使用 TLS 加密</span>
+              <span class="setting-desc">大多数邮件服务器需要启用</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" v-model="smtpUseTLS" @change="markDirty" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-divider"></div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">测试邮件发送</span>
+              <span class="setting-desc">保存配置后，发送测试邮件验证配置是否正确</span>
+            </div>
+            <div class="test-email-row">
+              <input type="email" v-model="testEmailAddress" class="form-input test-email-input" placeholder="测试邮箱地址" />
+              <button class="btn btn-secondary" @click="sendTestEmail" :disabled="testEmailSending || !testEmailAddress">
+                {{ testEmailSending ? '发送中...' : '发送测试' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 配置项列表 -->
@@ -520,8 +656,24 @@ const configs = reactive({
   banned_probe_enabled: 'false',
   banned_probe_interval: 1,
   token_refresh_cooldown: 30,
-  token_refresh_max_retries: 3
+  token_refresh_max_retries: 3,
+  // 邮件配置
+  email_verification_enabled: 'false',
+  email_code_expire_minutes: 5,
+  email_send_interval: 60,
+  email_daily_limit: 10,
+  smtp_host: '',
+  smtp_port: 587,
+  smtp_username: '',
+  smtp_password: '',
+  smtp_from_email: '',
+  smtp_from_name: 'Cli-Proxy',
+  smtp_use_tls: 'true'
 })
+
+// 邮件测试
+const testEmailAddress = ref('')
+const testEmailSending = ref(false)
 
 const configList = ref([])
 
@@ -568,6 +720,30 @@ const bannedProbeEnabled = computed({
   get: () => configs.banned_probe_enabled === 'true',
   set: (val) => { configs.banned_probe_enabled = val ? 'true' : 'false' }
 })
+
+// 邮件配置 computed
+const emailVerificationEnabled = computed({
+  get: () => configs.email_verification_enabled === 'true',
+  set: (val) => { configs.email_verification_enabled = val ? 'true' : 'false' }
+})
+
+const smtpUseTLS = computed({
+  get: () => configs.smtp_use_tls === 'true',
+  set: (val) => { configs.smtp_use_tls = val ? 'true' : 'false' }
+})
+
+async function sendTestEmail() {
+  if (!testEmailAddress.value) return
+  testEmailSending.value = true
+  try {
+    await api.testEmailSend(testEmailAddress.value)
+    ElMessage.success('测试邮件已发送，请检查收件箱')
+  } catch (error) {
+    // 错误信息已由 api 拦截器处理
+  } finally {
+    testEmailSending.value = false
+  }
+}
 
 function formatDate(str) {
   if (!str) return ''
@@ -769,6 +945,7 @@ onMounted(() => {
 .card-icon.records { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
 .card-icon.health { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
 .card-icon.strategy { background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%); }
+.card-icon.email { background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%); }
 
 .card-body {
   padding: var(--apple-spacing-lg);
@@ -1183,6 +1360,18 @@ onMounted(() => {
 .status-error {
   font-size: var(--apple-text-sm);
   color: var(--apple-red);
+}
+
+/* 测试邮件行 */
+.test-email-row {
+  display: flex;
+  gap: var(--apple-spacing-sm);
+  width: 100%;
+}
+
+.test-email-input {
+  flex: 1;
+  min-width: 200px;
 }
 
 /* 响应式 */
