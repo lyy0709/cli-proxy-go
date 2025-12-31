@@ -198,6 +198,7 @@ export default {
   getMyUsageSummary: () => Get('/usage/summary'),
   getMyDailyUsage: (params) => Get('/usage/daily', { params }),
   getMyModelUsage: (params) => Get('/usage/models', { params }),
+  getMyUsageRecords: (params) => Get('/usage/records', { params }),
 
   // Admin - Cache Management
   getCacheStats: () => Get('/admin/cache/stats'),

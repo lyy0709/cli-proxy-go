@@ -421,15 +421,22 @@ func (h *UsageHandler) GetUserUsageSummaryWithToday(c *gin.Context) {
 		return
 	}
 
-	// 获取今日费用
+	// 获取今日统计
 	today := time.Now().Format("2006-01-02")
+	todayUsage, _ := h.usageService.GetUserDailyUsage(ctx, userID, today)
 	todayCost, _ := h.usageService.GetUserDailyCost(ctx, userID, today)
+
+	// 获取模型数量
+	modelStats, _ := h.usageService.GetUserModelStats(ctx, userID)
 
 	response.Success(c, gin.H{
 		"total_tokens":   usage.TotalTokens,
 		"total_requests": usage.Requests,
 		"total_cost":     cost.TotalCost,
 		"today_cost":     todayCost.TotalCost,
+		"today_tokens":   todayUsage.TotalTokens,
+		"today_requests": todayUsage.Requests,
+		"model_count":    len(modelStats),
 	})
 }
 

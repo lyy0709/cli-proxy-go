@@ -256,14 +256,14 @@ const getQuotaClass = (pkg) => {
 
 const fetchStats = async () => {
   try {
-    const summaryRes = await api.getUserUsageSummary()
+    const summaryRes = await api.getMyUsageSummary()
     if (summaryRes.data) {
-      stats.today_cost = summaryRes.data.today?.total_cost || 0
-      stats.today_tokens = summaryRes.data.today?.total_tokens || 0
-      stats.today_requests = summaryRes.data.today?.request_count || 0
-      stats.total_cost = summaryRes.data.total?.total_cost || 0
-      stats.total_tokens = summaryRes.data.total?.total_tokens || 0
-      stats.total_requests = summaryRes.data.total?.request_count || 0
+      stats.today_cost = summaryRes.data.today_cost || 0
+      stats.today_tokens = summaryRes.data.today_tokens || 0
+      stats.today_requests = summaryRes.data.today_requests || 0
+      stats.total_cost = summaryRes.data.total_cost || 0
+      stats.total_tokens = summaryRes.data.total_tokens || 0
+      stats.total_requests = summaryRes.data.total_requests || 0
       stats.model_count = summaryRes.data.model_count || 0
     }
   } catch (e) {
@@ -282,7 +282,7 @@ const fetchPackages = async () => {
 
 const fetchApiKeys = async () => {
   try {
-    const res = await api.getApiKeys()
+    const res = await api.getAPIKeys()
     apiKeys.value = res.data || []
     stats.api_key_count = apiKeys.value.length
   } catch (e) {
